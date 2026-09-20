@@ -6,11 +6,13 @@ include('includes/security.php');
 
 if(isset($_POST['login'])){
     csrf_validate();
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $email = $_POST['email'];
     $password = $_POST['password'];
 
-    $sql = "SELECT * FROM users WHERE email='$email' AND is_admin >= 1 LIMIT 1";
-    $res = mysqli_query($conn, $sql);
+    $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email=? AND is_admin >= 1 LIMIT 1");
+    mysqli_stmt_bind_param($stmt, "s", $email);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
 
     if($res && mysqli_num_rows($res) == 1){
         $user = mysqli_fetch_assoc($res);

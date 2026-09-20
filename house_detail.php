@@ -18,10 +18,10 @@ $id = (int)($_GET['house'] ?? 0);
 $house = null;
 
 if($id > 0){
-    $q = mysqli_query($conn, "SELECT h.*, u.full_name FROM houses h
-                              LEFT JOIN users u ON h.user_id = u.id
-                              WHERE h.id=$id AND h.is_approved=1
-                              AND h.status IN ('Available','Rented')");
+    $stmt = mysqli_prepare($conn, "SELECT h.*, u.full_name FROM houses h LEFT JOIN users u ON h.user_id = u.id WHERE h.id=? AND h.is_approved=1 AND h.status IN ('Available','Rented')");
+    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_execute($stmt);
+    $q = mysqli_stmt_get_result($stmt);
     $house = $q ? mysqli_fetch_assoc($q) : null;
 }
 
@@ -29,7 +29,10 @@ $notFound = !$house;
 $photos = [];
 if($house){
     if(!empty($house['image'])) $photos[] = $house['image'];
-    $gq = mysqli_query($conn, "SELECT filename FROM house_images WHERE house_id=$id ORDER BY sort_order ASC, id ASC");
+    $gstmt = mysqli_prepare($conn, "SELECT filename FROM house_images WHERE house_id=? ORDER BY sort_order ASC, id ASC");
+    mysqli_stmt_bind_param($gstmt, "i", $id);
+    mysqli_stmt_execute($gstmt);
+    $gq = mysqli_stmt_get_result($gstmt);
     if($gq){
         while($g = mysqli_fetch_assoc($gq)){
             if(!empty($g['filename'])) $photos[] = $g['filename'];
@@ -44,9 +47,16 @@ $pendingReqId = 0;
 $callState = 'ask';
 if(isset($_SESSION['user_id']) && $id > 0){
     $me = (int)$_SESSION['user_id'];
-    $rc = mysqli_query($conn, "SELECT id FROM rental_requests WHERE user_id=$me AND house_id=$id AND status='pending' LIMIT 1");
+    $rc_stmt = mysqli_prepare($conn, "SELECT id FROM rental_requests WHERE user_id=? AND house_id=? AND status='pending' LIMIT 1");
+    mysqli_stmt_bind_param($rc_stmt, "ii", $me, $id);
+    mysqli_stmt_execute($rc_stmt);
+    $rc = mysqli_stmt_get_result($rc_stmt);
     if($rc && ($rrow = mysqli_fetch_assoc($rc))) $pendingReqId = (int)$rrow['id'];
-    $cr = mysqli_query($conn, "SELECT status FROM rental_requests WHERE user_id=$me AND house_id=$id ORDER BY id DESC LIMIT 1");
+    
+    $cr_stmt = mysqli_prepare($conn, "SELECT status FROM rental_requests WHERE user_id=? AND house_id=? ORDER BY id DESC LIMIT 1");
+    mysqli_stmt_bind_param($cr_stmt, "ii", $me, $id);
+    mysqli_stmt_execute($cr_stmt);
+    $cr = mysqli_stmt_get_result($cr_stmt);
     if($cr && ($crow = mysqli_fetch_assoc($cr))){
         if($crow['status'] === 'accepted') $callState = 'call';
         elseif($crow['status'] === 'pending') $callState = 'wait';
@@ -54,9 +64,10 @@ if(isset($_SESSION['user_id']) && $id > 0){
 }
 $amenities = [];
 if($house){
-    $aq = mysqli_query($conn, "SELECT a.id, a.name, a.icon FROM house_amenities ha
-                               JOIN amenities a ON ha.amenity_id = a.id
-                               WHERE ha.house_id = $id ORDER BY a.sort_order ASC");
+    $astmt = mysqli_prepare($conn, "SELECT a.id, a.name, a.icon FROM house_amenities ha JOIN amenities a ON ha.amenity_id = a.id WHERE ha.house_id = ? ORDER BY a.sort_order ASC");
+    mysqli_stmt_bind_param($astmt, "i", $id);
+    mysqli_stmt_execute($astmt);
+    $aq = mysqli_stmt_get_result($astmt);
     if($aq){
         while($a = mysqli_fetch_assoc($aq)){
             $amenities[] = $a;

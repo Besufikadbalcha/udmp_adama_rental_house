@@ -16,7 +16,9 @@ function csrf_field(){
 
 // Validate a POSTed CSRF token. On failure prints a message and dies.
 function csrf_validate(){
-    if (!isset($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', (string)$_POST['csrf_token'])) {
+    $sess_token = $_SESSION['csrf_token'] ?? '';
+    $post_token = (string)($_POST['csrf_token'] ?? '');
+    if (empty($sess_token) || empty($post_token) || !hash_equals($sess_token, $post_token)) {
         http_response_code(403);
         die("Invalid or expired form token. Please go back, reload the page, and try again.");
     }

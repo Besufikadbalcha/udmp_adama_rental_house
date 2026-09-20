@@ -1,4 +1,4 @@
-﻿<?php 
+<?php 
 include('includes/session_config.php');
 session_start();
 include('includes/db.php');
@@ -22,9 +22,16 @@ $notifs = [];
 $unread_count = 0;
 if(isset($_SESSION['user_id'])){
     $uid = (int)$_SESSION['user_id'];
-    $nq = mysqli_query($conn, "SELECT * FROM notifications WHERE user_id=$uid ORDER BY created_at DESC, id DESC LIMIT 10");
+    $nq_stmt = mysqli_prepare($conn, "SELECT * FROM notifications WHERE user_id=? ORDER BY created_at DESC, id DESC LIMIT 10");
+    mysqli_stmt_bind_param($nq_stmt, "i", $uid);
+    mysqli_stmt_execute($nq_stmt);
+    $nq = mysqli_stmt_get_result($nq_stmt);
     if($nq) $notifs = mysqli_fetch_all($nq, MYSQLI_ASSOC);
-    $cq = mysqli_query($conn, "SELECT COUNT(*) c FROM notifications WHERE user_id=$uid AND is_read=0");
+    
+    $cq_stmt = mysqli_prepare($conn, "SELECT COUNT(*) c FROM notifications WHERE user_id=? AND is_read=0");
+    mysqli_stmt_bind_param($cq_stmt, "i", $uid);
+    mysqli_stmt_execute($cq_stmt);
+    $cq = mysqli_stmt_get_result($cq_stmt);
     if($cq) $unread_count = (int)mysqli_fetch_assoc($cq)['c'];
 }
 
@@ -32,23 +39,30 @@ $LISTING_LIMIT = 8;
 
 function buildListingQuery($conn) {
     $where = "houses.status IN ('Available', 'Rented') AND houses.is_approved = 1";
+    $types = '';
+    $params = [];
     if(!empty($_GET['cat'])) {
-        $c = mysqli_real_escape_string($conn, $_GET['cat']);
-        $where .= " AND houses.category = '$c'";
+        $where .= " AND houses.category = ?";
+        $types .= 's';
+        $params[] = $_GET['cat'];
     }
     if(!empty($_GET['kb'])) {
-        $k = mysqli_real_escape_string($conn, $_GET['kb']);
-        $where .= " AND houses.kebele LIKE '%$k%'";
+        $where .= " AND houses.kebele LIKE ?";
+        $types .= 's';
+        $params[] = '%' . $_GET['kb'] . '%';
     }
     if(!empty($_GET['max_pr'])) {
-        $max = (int)$_GET['max_pr'];
-        $where .= " AND houses.amount <= $max";
+        $where .= " AND houses.amount <= ?";
+        $types .= 'i';
+        $params[] = (int)$_GET['max_pr'];
     }
     $sort = $_GET['sort'] ?? 'newest';
     $order = ($sort == 'price_low') ? 'amount ASC' : (($sort == 'price_high') ? 'amount DESC' : 'created_at DESC');
     return [
-        'where' => $where,
-        'sql'   => "SELECT houses.*, users.full_name FROM houses LEFT JOIN users ON houses.user_id = users.id WHERE $where ORDER BY $order"
+        'where'  => $where,
+        'types'  => $types,
+        'params' => $params,
+        'sql'    => "SELECT houses.*, users.full_name FROM houses LEFT JOIN users ON houses.user_id = users.id WHERE $where ORDER BY $order"
     ];
 }
 
@@ -119,7 +133,16 @@ if(isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $limit = isset($_GET['limit']) ? min(50, max(1, (int)$_GET['limit'])) : $LISTING_LIMIT;
     list($all_amenities, $house_amenities) = loadAmenities($conn);
     $house_images = loadHouseImages($conn);
-    $res = mysqli_query($conn, $q['sql'] . " LIMIT $limit OFFSET $offset");
+    
+    $stmt = mysqli_prepare($conn, $q['sql'] . " LIMIT ? OFFSET ?");
+    $types = $q['types'] . 'ii';
+    $params = $q['params'];
+    $params[] = $limit;
+    $params[] = $offset;
+    mysqli_stmt_bind_param($stmt, $types, ...$params);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
+    
     $count = 0;
     if($res && mysqli_num_rows($res) > 0) {
         while($row = mysqli_fetch_assoc($res)) {
@@ -132,7 +155,14 @@ if(isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 }
 
 $q = buildListingQuery($conn);
-$total_filtered = (int)mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM houses WHERE " . $q['where']))[0];
+
+$count_stmt = mysqli_prepare($conn, "SELECT COUNT(*) FROM houses WHERE " . $q['where']);
+if($q['types']) {
+    mysqli_stmt_bind_param($count_stmt, $q['types'], ...$q['params']);
+}
+mysqli_stmt_execute($count_stmt);
+$total_filtered = (int)mysqli_fetch_row(mysqli_stmt_get_result($count_stmt))[0];
+
 list($all_amenities, $house_amenities) = loadAmenities($conn);
 $house_images = loadHouseImages($conn);
 ?>
@@ -400,7 +430,14 @@ $house_images = loadHouseImages($conn);
         <div class="card-grid" id="listingGrid">
             <?php
             $offset = 0;
-            $res = mysqli_query($conn, $q['sql'] . " LIMIT $LISTING_LIMIT OFFSET $offset");
+            $stmt = mysqli_prepare($conn, $q['sql'] . " LIMIT ? OFFSET ?");
+            $types = $q['types'] . 'ii';
+            $params = $q['params'];
+            $params[] = $LISTING_LIMIT;
+            $params[] = $offset;
+            mysqli_stmt_bind_param($stmt, $types, ...$params);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
             $rendered = 0;
             if($res && mysqli_num_rows($res) > 0) {
                 while($row = mysqli_fetch_assoc($res)) {
