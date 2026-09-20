@@ -17,11 +17,12 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
     // If they were 0 (user), make them 1 (admin). If they were 1, make them 0.
     $new_status = ($current_status == 1) ? 0 : 1;
 
-    $sql = "UPDATE users SET is_admin = $new_status WHERE id = $user_id";
+    $sql_stmt = mysqli_prepare($conn, "UPDATE users SET is_admin = ? WHERE id = ?");
+    mysqli_stmt_bind_param($sql_stmt, "ii", $new_status, $user_id);
     
-    if(mysqli_query($conn, $sql)){
+    if(mysqli_stmt_execute($sql_stmt)){
         header("Location: admin_manage_users.php?msg=RoleUpdated");
     } else {
-        echo "Error updating record: " . mysqli_error($conn);
+        echo "Error updating record.";
     }
 }

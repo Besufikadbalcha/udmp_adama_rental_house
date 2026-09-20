@@ -14,28 +14,40 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
 
     switch($action) {
         case 'approve_user':
-            mysqli_query($conn, "UPDATE users SET status = 1 WHERE id = $id");
+            $stmt = mysqli_prepare($conn, "UPDATE users SET status = 1 WHERE id = ?");
+            mysqli_stmt_bind_param($stmt, "i", $id);
+            mysqli_stmt_execute($stmt);
             header("Location: admin_manage_users.php?msg=approved");
             break;
             
         case 'delete_user':
             if($id != $_SESSION['user_id']){
-                mysqli_query($conn, "DELETE FROM users WHERE id = $id");
+                $stmt = mysqli_prepare($conn, "DELETE FROM users WHERE id = ?");
+                mysqli_stmt_bind_param($stmt, "i", $id);
+                mysqli_stmt_execute($stmt);
             }
             header("Location: admin_manage_users.php?msg=deleted");
             break;
 
         case 'approve_house':
-            mysqli_query($conn, "UPDATE houses SET status = 1 WHERE id = $id");
+            $stmt = mysqli_prepare($conn, "UPDATE houses SET status = 1 WHERE id = ?");
+            mysqli_stmt_bind_param($stmt, "i", $id);
+            mysqli_stmt_execute($stmt);
             header("Location: admin_manage_houses.php?msg=posted");
             break;
 
         case 'delete_house':
-            $hd = mysqli_fetch_assoc(mysqli_query($conn, "SELECT image FROM houses WHERE id=$id"));
+            $stmt = mysqli_prepare($conn, "SELECT image FROM houses WHERE id=?");
+            mysqli_stmt_bind_param($stmt, "i", $id);
+            mysqli_stmt_execute($stmt);
+            $hd = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
             if($hd && !empty($hd['image']) && file_exists("uploads/" . $hd['image'])){
                 @unlink("uploads/" . $hd['image']);
             }
-            $imgs = mysqli_query($conn, "SELECT filename FROM house_images WHERE house_id=$id");
+            $stmt = mysqli_prepare($conn, "SELECT filename FROM house_images WHERE house_id=?");
+            mysqli_stmt_bind_param($stmt, "i", $id);
+            mysqli_stmt_execute($stmt);
+            $imgs = mysqli_stmt_get_result($stmt);
             if($imgs){
                 while($im = mysqli_fetch_assoc($imgs)){
                     if(!empty($im['filename']) && file_exists("uploads/" . $im['filename'])){
@@ -43,10 +55,21 @@ if($_SERVER['REQUEST_METHOD'] == 'POST'){
                     }
                 }
             }
-            mysqli_query($conn, "DELETE FROM requests WHERE house_id = $id");
-            mysqli_query($conn, "DELETE FROM rental_requests WHERE house_id = $id");
-            mysqli_query($conn, "DELETE FROM house_images WHERE house_id = $id");
-            mysqli_query($conn, "DELETE FROM houses WHERE id = $id");
+            $del = mysqli_prepare($conn, "DELETE FROM requests WHERE house_id = ?");
+            mysqli_stmt_bind_param($del, "i", $id);
+            mysqli_stmt_execute($del);
+
+            $del = mysqli_prepare($conn, "DELETE FROM rental_requests WHERE house_id = ?");
+            mysqli_stmt_bind_param($del, "i", $id);
+            mysqli_stmt_execute($del);
+
+            $del = mysqli_prepare($conn, "DELETE FROM house_images WHERE house_id = ?");
+            mysqli_stmt_bind_param($del, "i", $id);
+            mysqli_stmt_execute($del);
+
+            $del = mysqli_prepare($conn, "DELETE FROM houses WHERE id = ?");
+            mysqli_stmt_bind_param($del, "i", $id);
+            mysqli_stmt_execute($del);
             header("Location: admin_manage_houses.php?msg=deleted");
             break;
     }

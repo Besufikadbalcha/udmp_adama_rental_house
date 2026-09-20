@@ -26,19 +26,23 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     } elseif($new_pass !== '' && strlen($new_pass) < 6){
         $err = 'New password must be at least 6 characters long.';
     } else {
-        $chk = mysqli_query($conn, "SELECT id FROM users WHERE email='" . mysqli_real_escape_string($conn, $email) . "' AND id <> $uid");
+        $stmt = mysqli_prepare($conn, "SELECT id FROM users WHERE email=? AND id <> ?");
+        mysqli_stmt_bind_param($stmt, "si", $email, $uid);
+        mysqli_stmt_execute($stmt);
+        $chk = mysqli_stmt_get_result($stmt);
         if($chk && mysqli_num_rows($chk) > 0){
             $err = 'An account with this email address already exists.';
         } else {
-            $fn = mysqli_real_escape_string($conn, $full_name);
-            $em = mysqli_real_escape_string($conn, $email);
-            $ph = mysqli_real_escape_string($conn, $phone);
-            $ph2 = mysqli_real_escape_string($conn, $phone2);
-            $upd = mysqli_query($conn, "UPDATE users SET full_name='$fn', email='$em', phone='$ph', phone2='$ph2' WHERE id=$uid");
+            $stmt2 = mysqli_prepare($conn, "UPDATE users SET full_name=?, email=?, phone=?, phone2=? WHERE id=?");
+            mysqli_stmt_bind_param($stmt2, "ssssi", $full_name, $email, $phone, $phone2, $uid);
+            $upd = mysqli_stmt_execute($stmt2);
             if($upd){
                 $_SESSION['user_name'] = $full_name;
                 if($new_pass !== ''){
-                    mysqli_query($conn, "UPDATE users SET password='" . password_hash($new_pass, PASSWORD_DEFAULT) . "' WHERE id=$uid");
+                    $hash = password_hash($new_pass, PASSWORD_DEFAULT);
+                    $stmt3 = mysqli_prepare($conn, "UPDATE users SET password=? WHERE id=?");
+                    mysqli_stmt_bind_param($stmt3, "si", $hash, $uid);
+                    mysqli_stmt_execute($stmt3);
                     $notif = ['type' => 'success', 'title' => 'Account updated', 'message' => 'Your profile and password were updated successfully.'];
                 } else {
                     $notif = ['type' => 'success', 'title' => 'Account updated', 'message' => 'Your profile was updated successfully.'];
@@ -50,7 +54,10 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
     }
 }
 
-$res = mysqli_query($conn, "SELECT * FROM users WHERE id=$uid");
+$stmt4 = mysqli_prepare($conn, "SELECT * FROM users WHERE id=?");
+mysqli_stmt_bind_param($stmt4, "i", $uid);
+mysqli_stmt_execute($stmt4);
+$res = mysqli_stmt_get_result($stmt4);
 $user = $res ? mysqli_fetch_assoc($res) : null;
 if(!$user){ header("Location: logout.php"); exit(); }
 ?>

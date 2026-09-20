@@ -23,8 +23,10 @@ if (!validate_email_before_send($email)['ok']) {
     exit();
 }
 
-$esc = mysqli_real_escape_string($conn, $email);
-$res = mysqli_query($conn, "SELECT id, full_name, email_verified FROM users WHERE email='$esc' LIMIT 1");
+$stmt = mysqli_prepare($conn, "SELECT id, full_name, email_verified FROM users WHERE email=? LIMIT 1");
+mysqli_stmt_bind_param($stmt, "s", $email);
+mysqli_stmt_execute($stmt);
+$res = mysqli_stmt_get_result($stmt);
 if (!$res || !($user = mysqli_fetch_assoc($res))) {
     header("Location: $back?resend=noaccount");
     exit();
@@ -36,7 +38,10 @@ if ((int)$user['email_verified'] === 1) {
 
 $token = bin2hex(random_bytes(32));
 $expires = date('Y-m-d H:i:s', time() + 86400);
-mysqli_query($conn, "UPDATE users SET verify_token='$token', verify_expires='$expires' WHERE id=" . (int)$user['id']);
+$uid = (int)$user['id'];
+$stmt2 = mysqli_prepare($conn, "UPDATE users SET verify_token=?, verify_expires=? WHERE id=?");
+mysqli_stmt_bind_param($stmt2, "ssi", $token, $expires, $uid);
+mysqli_stmt_execute($stmt2);
 
 $_SESSION['verify_pending_email'] = $email;
 $mailResult = send_verification_email($email, $user['full_name'], $token);

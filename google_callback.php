@@ -63,28 +63,39 @@ if (isset($info['exp']) && (int)$info['exp'] < time()) {
 
 $g_email = $info['email'];
 $g_name = $info['name'] ?? (strstr($g_email, '@', true) ?: $g_email);
-$esc_email = mysqli_real_escape_string($conn, $g_email);
-$esc_name = mysqli_real_escape_string($conn, $g_name);
 
 // Link by email: create account if missing, or attach verification if present
-$res = mysqli_query($conn, "SELECT * FROM users WHERE email='$esc_email' LIMIT 1");
+$stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email=? LIMIT 1");
+mysqli_stmt_bind_param($stmt, "s", $g_email);
+mysqli_stmt_execute($stmt);
+$res = mysqli_stmt_get_result($stmt);
 if ($res && ($user = mysqli_fetch_assoc($res))) {
     // Google proved this email — mark verified if it wasn't
     if ((int)$user['email_verified'] === 0) {
-        mysqli_query($conn, "UPDATE users SET email_verified=1, verify_token=NULL, verify_expires=NULL WHERE id=" . (int)$user['id']);
+        $uid = (int)$user['id'];
+        $stmt2 = mysqli_prepare($conn, "UPDATE users SET email_verified=1, verify_token=NULL, verify_expires=NULL WHERE id=?");
+        mysqli_stmt_bind_param($stmt2, "i", $uid);
+        mysqli_stmt_execute($stmt2);
         $user['email_verified'] = 1;
     }
     if ((int)$user['is_admin'] === 0 && $user['full_name'] === '') {
-        mysqli_query($conn, "UPDATE users SET full_name='$esc_name' WHERE id=" . (int)$user['id']);
+        $uid = (int)$user['id'];
+        $stmt3 = mysqli_prepare($conn, "UPDATE users SET full_name=? WHERE id=?");
+        mysqli_stmt_bind_param($stmt3, "si", $g_name, $uid);
+        mysqli_stmt_execute($stmt3);
         $user['full_name'] = $g_name;
     }
 } else {
     $pass = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT);
-    $sql = "INSERT INTO users (full_name, email, password, email_verified) VALUES ('$esc_name', '$esc_email', '$pass', 1)";
-    if (!mysqli_query($conn, $sql)) {
+    $stmt4 = mysqli_prepare($conn, "INSERT INTO users (full_name, email, password, email_verified) VALUES (?, ?, ?, 1)");
+    mysqli_stmt_bind_param($stmt4, "sss", $g_name, $g_email, $pass);
+    if (!mysqli_stmt_execute($stmt4)) {
         google_redirect('login.php?google=error');
     }
-    $user = mysqli_fetch_assoc(mysqli_query($conn, "SELECT * FROM users WHERE email='$esc_email' LIMIT 1"));
+    $stmt5 = mysqli_prepare($conn, "SELECT * FROM users WHERE email=? LIMIT 1");
+    mysqli_stmt_bind_param($stmt5, "s", $g_email);
+    mysqli_stmt_execute($stmt5);
+    $user = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt5));
 }
 
 $_SESSION['user_id'] = $user['id'];
