@@ -30,7 +30,9 @@ if(isset($_POST['register'])){
     $setup_key = trim($_POST['setup_key'] ?? '');
 
     $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
-    if($check_email && mysqli_num_rows($check_email) > 0){
+    if (!validate_email_before_send($_POST['email'])['ok']) {
+        $error = "That email address is not valid or its domain can't receive mail. Please double-check it and try again.";
+    } elseif($check_email && mysqli_num_rows($check_email) > 0){
         $error = "An account with this email already exists.";
     } elseif ($setup_key !== '' && !has_admin() && setup_key_valid($setup_key)) {
         $sql = "INSERT INTO users (full_name, email, password, is_admin, status, email_verified) VALUES ('$name', '$email', '$pass', 2, 1, 1)";

@@ -29,6 +29,43 @@ function mail_env_is_configured() {
         && BREVO_API_KEY !== '' && BREVO_FROM_EMAIL !== '';
 }
 
+// Best-effort pre-send check that an address looks valid AND belongs to a
+// domain that can actually receive mail (has MX records). Real mailbox
+// existence (e.g. does the gmail user exist?) cannot be confirmed client-side —
+// Google blocks SMTP probing — so this catches format typos and dead domains
+// (like "user@gmai.com") before anything is sent.
+// Returns ['ok' => bool, 'reason' => string].
+function validate_email_before_send($email) {
+    $email = trim((string)$email);
+    if ($email === '' || strlen($email) > 254) {
+        return ['ok' => false, 'reason' => 'invalid'];
+    }
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        return ['ok' => false, 'reason' => 'invalid'];
+    }
+    $at = strrpos($email, '@');
+    $domain = strtolower(substr($email, $at + 1));
+    if ($domain === '' || strpos($domain, '.') === false) {
+        return ['ok' => false, 'reason' => 'invalid'];
+    }
+
+    $hasMx = false;
+    if (function_exists('checkdnsrr')) {
+        $hasMx = @checkdnsrr($domain, 'MX');
+    } elseif (function_exists('dns_get_record')) {
+        $records = @dns_get_record($domain, DNS_MX);
+        $hasMx = is_array($records) && count($records) > 0;
+    } else {
+        // No DNS verification available — don't block on an unusable environment.
+        $hasMx = true;
+    }
+
+    if (!$hasMx) {
+        return ['ok' => false, 'reason' => 'no mail domain (no MX records)'];
+    }
+    return ['ok' => true, 'reason' => ''];
+}
+
 // Append to a local mail log so the verification flow is testable in dev.
 function log_mail_dev($subject, $to, $link = '', $note = '') {
     $entry = '[' . date('Y-m-d H:i:s') . "] To: $to | $subject";
@@ -80,8 +117,9 @@ function send_mail_brevo($toEmail, $toName, $subject, $htmlBody, $textBody = '')
         return ['ok' => false, 'info' => 'dev'];
     }
 
-    if (!filter_var($toEmail, FILTER_VALIDATE_EMAIL)) {
-        log_mail_dev($subject, $toEmail, '', 'INVALID RECIPIENT EMAIL — mail not sent');
+    $valid = validate_email_before_send($toEmail);
+    if (!$valid['ok']) {
+        log_mail_dev($subject, $toEmail, '', 'INVALID RECIPIENT EMAIL — mail not sent (' . $valid['reason'] . ')');
         return ['ok' => false, 'info' => 'invalid recipient email'];
     }
 

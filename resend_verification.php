@@ -18,6 +18,11 @@ if ($email === '') {
     exit();
 }
 
+if (!validate_email_before_send($email)['ok']) {
+    header("Location: $back?resend=failed");
+    exit();
+}
+
 $esc = mysqli_real_escape_string($conn, $email);
 $res = mysqli_query($conn, "SELECT id, full_name, email_verified FROM users WHERE email='$esc' LIMIT 1");
 if (!$res || !($user = mysqli_fetch_assoc($res))) {
