@@ -40,6 +40,7 @@ if($house){
 
 $status    = $house['status'] ?? '';
 $isAvail   = ($status === 'Available');
+$ownerPhone = preg_replace('/[^0-9+]/', '', $house['phone'] ?? '');
 $pendingReqId = 0;
 $callState = 'ask';
 if(isset($_SESSION['user_id']) && $id > 0){
@@ -156,6 +157,7 @@ $rentHref  = isset($_SESSION['user_id'])
         .btn-map{background:rgba(59,130,246,.1);color:#3b82f6}
         .btn-map:hover{background:#3b82f6;color:#fff}
         .rented-note{grid-column:1/-1;background:#f8faf9;border:1px dashed #e2e8f0;color:#94a3b8;border-radius:11px;padding:14px;text-align:center;font-size:13px;font-weight:600}
+        .rented-note.rented-ok{background:#f0fdfa;border:1px solid #ccfbf1;color:#0f766e}
         .btn-rent:disabled{opacity:.65;cursor:default;transform:none;box-shadow:none}
 
         /* OWNER CARD */
@@ -257,9 +259,11 @@ $rentHref  = isset($_SESSION['user_id'])
                 </div>
 
                 <div class="actions">
-                    <?php if($isAvail): ?>
+                    <?php if($callState === 'call'): ?>
+                        <a href="tel:<?php echo htmlspecialchars($ownerPhone); ?>" id="callOwnerBtn" class="btn-action btn-call" data-phone="<?php echo htmlspecialchars($ownerPhone); ?>"><i class="fas fa-phone"></i> Call Owner</a>
+                        <div class="rented-note rented-ok"><i class="fas fa-check-circle"></i> Your rental request was accepted. Press <strong>Call Owner</strong> to call the landlord directly.</div>
+                    <?php elseif($isAvail): ?>
                         <a href="<?php echo htmlspecialchars($rentHref); ?>" id="rentBtn" class="btn-action btn-rent"><i class="fas <?php echo $pendingReqId ? 'fa-xmark' : 'fa-hand-holding-heart'; ?>"></i> <?php echo $pendingReqId ? 'Cancel Request' : 'Request to Rent'; ?></a>
-                        <button type="button" id="callOwnerBtn" class="btn-action btn-call"><i class="fas fa-phone"></i> Call Owner</button>
                     <?php else: ?>
                         <div class="rented-note"><i class="fas fa-lock"></i> This property is currently rented and cannot be reserved.</div>
                     <?php endif; ?>
@@ -399,19 +403,12 @@ $rentHref  = isset($_SESSION['user_id'])
         if(callOwnerBtn){
             callOwnerBtn.addEventListener('click', function(e){
                 e.preventDefault();
-                var state = <?php echo json_encode($callState); ?>;
-                var phone = <?php echo json_encode($house['phone'] ?? ''); ?>;
-                if(state === 'call'){
-                    showToast('Calling the property owner...', 'success', 'Calling owner');
-                    window.location.href = 'tel:' + phone;
-                } else if(state === 'wait'){
-                    showToast('Wait until your request is approved.', 'info', 'Request pending');
-                } else {
-                    showToast('First ask a request.', 'info', 'Request required');
-                }
+                var phone = this.getAttribute('data-phone') || '';
+                if(phone) window.location.href = 'tel:' + phone;
             });
         }
-    </script>
+
+        </script>
     <?php include(__DIR__ . '/includes/popup.php'); ?>
 </body>
 </html>

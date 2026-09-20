@@ -66,8 +66,8 @@ if($action === 'accept'){
     mysqli_query($conn, "UPDATE rental_requests SET status='accepted' WHERE id=$id");
     mysqli_query($conn, "UPDATE houses SET status='Rented' WHERE id={$rr['house_id']}");
     mysqli_query($conn, "UPDATE rental_requests SET status='rejected' WHERE house_id={$rr['house_id']} AND id<>$id AND status='pending'");
-    $msg = mysqli_real_escape_string($conn, "Your request to rent the property in Kebele $kebele was accepted. The owner will contact you soon.");
-    mysqli_query($conn, "INSERT INTO notifications (user_id, type, title, message, link) VALUES ($tenant_id, 'rent_request', 'Rental request accepted', '$msg', 'index.php')");
+    $msg = mysqli_real_escape_string($conn, "Your request to rent the property in Kebele $kebele was accepted. Open the property to call the owner.");
+    mysqli_query($conn, "INSERT INTO notifications (user_id, type, title, message, link) VALUES ($tenant_id, 'rent_request', 'Rental request accepted', '$msg', 'house_detail.php?house={$rr['house_id']}')");
     header("Location: manage_houses.php?msg=accepted");
 } else {
     mysqli_query($conn, "UPDATE rental_requests SET status='rejected' WHERE id=$id");
