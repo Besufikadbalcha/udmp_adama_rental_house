@@ -5,7 +5,7 @@ $total_kebeles = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(DISTIN
 $total_tenants = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM requests WHERE status=0"))[0];
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?php echo htmlspecialchars($lang); ?>">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,10 +52,25 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 .user-dropdown a{display:flex;align-items:center;gap:8px;padding:10px 16px;color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;transition:all .15s}
 .user-dropdown a:hover{background:rgba(255,255,255,.05);color:#fff}
 .user-dropdown a.logout{color:#f87171;border-top:1px solid rgba(255,255,255,.08)}
-.user-dropdown a.logout:hover{background:rgba(248,113,113,.1);color:#fca5a5}
-.lang-pill{display:inline-flex;align-items:center;gap:7px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:50px;padding:9px 16px;font-weight:600;font-size:13px;text-decoration:none;transition:all .2s}
+        .user-dropdown a.logout:hover{background:rgba(248,113,113,.1);color:#fca5a5}
+        .user-dropdown-lang-title{display:flex;align-items:center;gap:8px;padding:10px 16px 4px;color:#64748b;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
+        .user-dropdown-lang a .lg-badge{width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.08);display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+        .user-dropdown-lang a.active{color:#2dd4bf}
+        .user-dropdown-lang a.active .lg-badge{background:rgba(13,148,136,.3);color:#5eead4}
+        .user-dropdown-lang .lg-check{margin-left:auto;color:#2dd4bf;font-size:12px}
+.lang-drop{position:relative;display:inline-flex}
+.lang-pill{display:inline-flex;align-items:center;gap:7px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:50px;padding:9px 16px;font-weight:600;font-size:13px;text-decoration:none;transition:all .2s;cursor:pointer;font-family:'Poppins',sans-serif}
 .lang-pill:hover{background:rgba(255,255,255,.16);border-color:rgba(45,212,191,.4)}
-.lang-pill i{color:#2dd4bf}
+.lang-pill .lg-code{color:#2dd4bf}
+.lang-pill .chev{margin-left:3px;font-size:10px;color:#94a3b8}
+.lang-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:200px;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:6px;box-shadow:0 20px 40px rgba(0,0,0,.35);opacity:0;visibility:hidden;transform:translateY(-6px);transition:all .22s cubic-bezier(.34,1.56,.64,1);z-index:1201}
+.lang-drop.open .lang-menu{opacity:1;visibility:visible;transform:translateY(0)}
+.lang-menu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13.5px;font-weight:600;transition:background .15s}
+.lang-menu a:hover{background:rgba(255,255,255,.08);color:#fff}
+.lang-menu a.active{background:rgba(13,148,136,.16);color:#2dd4bf}
+.lang-menu a .lg-badge{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+.lang-menu a.active .lg-badge{background:rgba(13,148,136,.3);color:#5eead4}
+.lang-menu a .lg-check{margin-left:auto;color:#2dd4bf;font-size:12px}
 
 /* HERO */
 .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0f172a}
@@ -125,7 +140,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 @media(max-width:768px){
 .navbar{padding:12px 20px}
 .nav-links a:not(.btn-nav),.nav-links:not(:has(a.btn-nav)) a{display:none}
-.lang-pill{display:inline-flex !important}
+.lang-drop{display:inline-flex !important;position:relative;z-index:1100}
 .stats-grid{grid-template-columns:repeat(2,1fr);gap:16px}
 .cat-grid{grid-template-columns:1fr}
 .steps-grid{grid-template-columns:1fr}
@@ -148,7 +163,16 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <a href="#contact"><?php echo t('nav_contact'); ?></a>
     </div>
     <div class="nav-links">
-        <a href="<?php echo lang_switch_url($lang === 'am' ? 'en' : 'am'); ?>" class="lang-pill" title="Switch language"><i class="fas fa-globe"></i> <?php echo $lang === 'am' ? 'English' : 'አማርኛ'; ?></a>
+        <?php if(!isset($_SESSION['user_id'])): ?>
+        <div class="lang-drop">
+            <button type="button" class="lang-pill" onclick="toggleLangMenu(this)" aria-label="Choose language"><i class="fas fa-globe"></i> <span class="lg-code"><?php echo htmlspecialchars(strtoupper($lang)); ?></span> <i class="fas fa-chevron-down chev"></i></button>
+            <div class="lang-menu">
+                <?php $languages = ['en' => 'English', 'am' => 'አማርኛ', 'om' => 'Afaan Oromoo']; $codes = ['en' => 'EN', 'am' => 'አማ', 'om' => 'OM']; foreach($languages as $lcode => $lname) { ?>
+                <a href="<?php echo lang_switch_url($lcode); ?>" class="<?php echo $lang === $lcode ? 'active' : ''; ?>"><span class="lg-badge"><?php echo $codes[$lcode]; ?></span><?php echo $lname; ?><?php if($lang === $lcode) { ?><i class="fas fa-check lg-check"></i><?php } ?></a>
+                <?php } ?>
+            </div>
+        </div>
+        <?php endif; ?>
         <?php if(isset($_SESSION['user_id'])): ?>
             <div class="user-avatar-wrap">
                 <div class="user-avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
@@ -156,11 +180,19 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
                     <div class="user-dropdown-header">
                         <div class="user-avatar-sm"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
                         <div><div class="user-dropdown-name"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'User'); ?></div>
-                        <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
+                        <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? t('role_admin') : t('role_landlord'); ?></div></div>
                     </div>
                     <div class="user-dropdown-divider"></div>
                     <a href="manage_houses.php"><i class="fas fa-th-large"></i> <?php echo t('nav_dashboard'); ?></a>
                     <a href="profile.php"><i class="fas fa-user"></i> <?php echo t('nav_profile'); ?></a>
+                    <div class="user-dropdown-divider"></div>
+                    <div class="user-dropdown-lang-title"><i class="fas fa-globe"></i> <?php echo t('lang_label'); ?></div>
+                    <div class="user-dropdown-lang">
+                        <?php $languages = ['en' => 'English', 'am' => 'አማርኛ', 'om' => 'Afaan Oromoo']; $codes = ['en' => 'EN', 'am' => 'አማ', 'om' => 'OM']; foreach($languages as $lcode => $lname) { ?>
+                        <a href="<?php echo lang_switch_url($lcode); ?>" class="<?php echo $lang === $lcode ? 'active' : ''; ?>"><span class="lg-badge"><?php echo $codes[$lcode]; ?></span><?php echo $lname; ?><?php if($lang === $lcode) { ?><i class="fas fa-check lg-check"></i><?php } ?></a>
+                        <?php } ?>
+                    </div>
+                    <div class="user-dropdown-divider"></div>
                     <a href="logout.php" class="logout"><i class="fas fa-right-from-bracket"></i> <?php echo t('nav_signout'); ?></a>
                 </div>
             </div>
@@ -283,6 +315,16 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 <script>
 window.addEventListener('scroll',()=>{
     document.getElementById('navbar').classList.toggle('scrolled',window.scrollY>50);
+});
+function toggleLangMenu(btn){
+    var drop = btn.closest('.lang-drop');
+    var isOpen = drop.classList.contains('open');
+    document.querySelectorAll('.lang-drop.open').forEach(function(d){ d.classList.remove('open'); });
+    if(!isOpen) drop.classList.add('open');
+}
+document.addEventListener('click', function(e){
+    if(e.target.closest('.lang-drop')) return;
+    document.querySelectorAll('.lang-drop.open').forEach(function(d){ d.classList.remove('open'); });
 });
 </script>
 </body>

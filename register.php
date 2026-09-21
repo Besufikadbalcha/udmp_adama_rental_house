@@ -181,9 +181,19 @@ if(isset($_POST['register'])){
         .auth-footer a:hover{text-decoration:underline}
         .auth-card .secure-note{margin-top:22px;padding:12px 14px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;color:#0f766e;font-size:12px;display:flex;align-items:center;gap:8px}
         .auth-card .secure-note i{font-size:15px}
-        .lang-toggle{position:fixed;top:20px;right:24px;z-index:1000;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:50px;font-size:13px;font-weight:700;text-decoration:none;transition:all .25s;font-family:'Inter',sans-serif;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 6px 20px rgba(0,0,0,.2)}
-        .lang-toggle:hover{background:#1e293b;transform:translateY(-1px)}
-        .lang-toggle i{color:#2dd4bf}
+        .lang-drop{position:fixed;top:20px;right:24px;z-index:1200}
+        .lang-pill{display:inline-flex;align-items:center;gap:8px;color:#fff;background:#0f172a;border:1px solid rgba(255,255,255,.14);border-radius:50px;padding:9px 16px;font-weight:700;font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+        .lang-pill:hover{background:#1e293b;border-color:rgba(45,212,191,.4)}
+        .lang-pill .lg-code{color:#2dd4bf}
+        .lang-pill .chev{margin-left:3px;font-size:10px;color:#94a3b8}
+        .lang-menu{position:absolute;top:calc(100% + 10px);right:0;min-width:200px;background:#1e293b;border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:6px;box-shadow:0 20px 40px rgba(0,0,0,.35);opacity:0;visibility:hidden;transform:translateY(-6px);transition:all .22s cubic-bezier(.34,1.56,.64,1);z-index:1201}
+        .lang-drop.open .lang-menu{opacity:1;visibility:visible;transform:translateY(0)}
+        .lang-menu a{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:9px;color:rgba(255,255,255,.75);text-decoration:none;font-size:13.5px;font-weight:600;transition:background .15s}
+        .lang-menu a:hover{background:rgba(255,255,255,.08);color:#fff}
+        .lang-menu a.active{background:rgba(13,148,136,.16);color:#2dd4bf}
+        .lang-menu a .lg-badge{width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0}
+        .lang-menu a.active .lg-badge{background:rgba(13,148,136,.3);color:#5eead4}
+        .lang-menu a .lg-check{margin-left:auto;color:#2dd4bf;font-size:12px}
         .mobile-brand{display:none;text-align:center;margin-bottom:30px}
         .mobile-brand .logo{width:54px;height:54px;background:linear-gradient(135deg,#0d9488,#14b8a6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#fff;margin:0 auto 14px;box-shadow:0 6px 18px rgba(13,148,136,.35)}
         .mobile-brand h3{font-size:20px;font-weight:800;color:var(--ink)}
@@ -198,7 +208,6 @@ if(isset($_POST['register'])){
     </style>
 </head>
 <body>
-    <a href="<?php echo lang_switch_url($lang === 'am' ? 'en' : 'am'); ?>" class="lang-toggle" title="Switch language"><i class="fas fa-globe"></i> <?php echo $lang === 'am' ? 'English' : 'አማርኛ'; ?></a>
     <div class="auth-left">
     <div class="auth-left-bg"></div>
     <div class="auth-left-overlay"></div>
@@ -308,6 +317,16 @@ if(isset($_POST['register'])){
         icon.classList.toggle('fa-eye-slash', show);
         icon.classList.toggle('fa-eye', !show);
     }
+    function toggleLangMenu(btn){
+        var drop = btn.closest('.lang-drop');
+        var isOpen = drop.classList.contains('open');
+        document.querySelectorAll('.lang-drop.open').forEach(function(d){ d.classList.remove('open'); });
+        if(!isOpen) drop.classList.add('open');
+    }
+    document.addEventListener('click', function(e){
+        if(e.target.closest('.lang-drop')) return;
+        document.querySelectorAll('.lang-drop.open').forEach(function(d){ d.classList.remove('open'); });
+    });
     </script>
 </body>
 </html>
