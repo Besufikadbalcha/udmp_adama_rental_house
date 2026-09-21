@@ -51,7 +51,7 @@ if ($tok_code < 200 || $tok_code >= 300 || empty($tok['id_token'])) {
     google_redirect('login.php?google=token');
 }
 
-// Validate the ID token with Google (issuer, audience, expiry, email)
+// Validate the ID token with Google (issuer, audience, expiry, email, verified)
 $info_body = file_get_contents('https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($tok['id_token']));
 $info = json_decode((string)$info_body, true);
 if (empty($info['email']) || ($info['aud'] ?? '') !== GOOGLE_CLIENT_ID) {
@@ -59,6 +59,13 @@ if (empty($info['email']) || ($info['aud'] ?? '') !== GOOGLE_CLIENT_ID) {
 }
 if (isset($info['exp']) && (int)$info['exp'] < time()) {
     google_redirect('login.php?google=expired');
+}
+$valid_iss = ['accounts.google.com', 'https://accounts.google.com'];
+if (!in_array($info['iss'] ?? '', $valid_iss, true)) {
+    google_redirect('login.php?google=invalid');
+}
+if ((int)($info['email_verified'] ?? 0) !== 1) {
+    google_redirect('login.php?google=unverified');
 }
 
 $g_email = $info['email'];

@@ -16,12 +16,11 @@ if(!isset($_POST['delete_btn'])){
 csrf_validate();
 
 $id = (int)$_POST['id'];
-$input_key = $_POST['key'] ?? null;
 $current_user = (int)$_SESSION['user_id'];
 
 $status = ['type' => 'error', 'message' => 'Something went wrong. Please try again.', 'title' => 'Error', 'redirect' => 'manage_houses.php'];
 
-$stmt = mysqli_prepare($conn, "SELECT image, delete_key FROM houses WHERE id = ? AND user_id = ?");
+$stmt = mysqli_prepare($conn, "SELECT image FROM houses WHERE id = ? AND user_id = ?");
 mysqli_stmt_bind_param($stmt, "ii", $id, $current_user);
 mysqli_stmt_execute($stmt);
 $query = mysqli_stmt_get_result($stmt);
@@ -29,19 +28,9 @@ $query = mysqli_stmt_get_result($stmt);
 if($query && mysqli_num_rows($query) > 0){
     $data = mysqli_fetch_assoc($query);
 
-    $allow_delete = false;
-    if($input_key !== null && $input_key !== ''){
-        if($data['delete_key'] === $input_key){
-            $allow_delete = true;
-        }
-    } else {
-        $allow_delete = true;
+    if(!empty($data['image']) && file_exists("uploads/" . $data['image'])){
+        unlink("uploads/" . $data['image']);
     }
-
-    if($allow_delete){
-        if(!empty($data['image']) && file_exists("uploads/" . $data['image'])){
-            unlink("uploads/" . $data['image']);
-        }
         $stmt2 = mysqli_prepare($conn, "SELECT filename FROM house_images WHERE house_id = ?");
         mysqli_stmt_bind_param($stmt2, "i", $id);
         mysqli_stmt_execute($stmt2);
@@ -69,9 +58,6 @@ if($query && mysqli_num_rows($query) > 0){
         mysqli_stmt_bind_param($del_stmt, "i", $id);
         mysqli_stmt_execute($del_stmt);
         $status = ['type' => 'success', 'message' => 'Post removed successfully.', 'title' => 'Listing deleted', 'redirect' => 'manage_houses.php'];
-    } else {
-        $status = ['type' => 'error', 'message' => 'Incorrect secret key.', 'title' => 'Action blocked', 'redirect' => 'manage_houses.php'];
-    }
 } else {
     $status = ['type' => 'error', 'message' => 'Unauthorized! You can only delete your own posts.', 'title' => 'Restricted', 'redirect' => 'manage_houses.php'];
 }

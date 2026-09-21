@@ -18,6 +18,13 @@ if (!$conn) {
     die("Connection failed: " . mysqli_connect_error());
 }
 
+mysqli_query($conn, "CREATE TABLE IF NOT EXISTS login_attempts (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    identifier VARCHAR(255) NOT NULL,
+    attempt_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_identifier_time (identifier, attempt_at)
+)");
+
 mysqli_query($conn, "CREATE TABLE IF NOT EXISTS amenities (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,

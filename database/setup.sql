@@ -32,8 +32,7 @@ CREATE TABLE IF NOT EXISTS houses (
     video_file VARCHAR(255),
     status VARCHAR(50) DEFAULT 'Pending',
     is_approved INT DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    delete_key VARCHAR(50)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS requests (

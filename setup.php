@@ -66,8 +66,7 @@ if (!$conn) {
         video_file VARCHAR(255),
         status VARCHAR(50) DEFAULT 'Pending',
         is_approved INT DEFAULT 0,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        delete_key VARCHAR(50)
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
     mysqli_query($conn, "CREATE TABLE IF NOT EXISTS requests (
@@ -120,6 +119,13 @@ if (!$conn) {
         status VARCHAR(20) DEFAULT 'pending',
         message TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS login_attempts (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        identifier VARCHAR(255) NOT NULL,
+        attempt_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_identifier_time (identifier, attempt_at)
     )");
 
     mysqli_query($conn, "CREATE TABLE IF NOT EXISTS amenities (
