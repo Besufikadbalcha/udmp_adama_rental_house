@@ -65,8 +65,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 .hero-content p{color:rgba(255,255,255,.7);font-size:clamp(16px,2vw,20px);line-height:1.7;margin-bottom:36px;max-width:600px;margin-left:auto;margin-right:auto}
 .hero-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
 .btn-hero{display:inline-flex;align-items:center;gap:10px;padding:16px 32px;border-radius:14px;font-size:16px;font-weight:700;text-decoration:none;transition:all .3s;border:none;cursor:pointer}
-.btn-hero-primary{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;box-shadow:0 4px 20px rgba(13,148,136,.4)}
-.btn-hero-primary:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(13,148,136,.5)}
+.btn-hero-primary{background:#fff;color:#000;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.btn-hero-primary:hover{transform:translateY(-3px);box-shadow:0 8px 30px rgba(0,0,0,.3)}
 .btn-hero-secondary{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(10px)}
 .btn-hero-secondary:hover{background:rgba(255,255,255,.15);transform:translateY(-3px)}
 
