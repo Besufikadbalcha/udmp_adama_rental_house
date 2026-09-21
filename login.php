@@ -4,6 +4,7 @@ session_start();
 include('includes/db.php');
 include('includes/mail_helper.php');
 include('includes/security.php');
+include('includes/lang.php');
 
 $verification_warning = false;
 $verification_email = '';
@@ -149,6 +150,9 @@ if(isset($_GET['google'])){
         .auth-footer a:hover{text-decoration:underline}
         .auth-card .secure-note{margin-top:22px;padding:12px 14px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;color:#0f766e;font-size:12px;display:flex;align-items:center;gap:8px}
         .auth-card .secure-note i{font-size:15px}
+        .lang-toggle{position:fixed;top:20px;right:24px;z-index:1000;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:50px;font-size:13px;font-weight:700;text-decoration:none;transition:all .25s;font-family:'Inter',sans-serif;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+        .lang-toggle:hover{background:#1e293b;transform:translateY(-1px)}
+        .lang-toggle i{color:#2dd4bf}
         .mobile-brand{display:none;text-align:center;margin-bottom:30px}
         .mobile-brand .logo{width:54px;height:54px;background:linear-gradient(135deg,#0d9488,#14b8a6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#fff;margin:0 auto 14px;box-shadow:0 6px 18px rgba(13,148,136,.35)}
         .mobile-brand h3{font-size:20px;font-weight:800;color:var(--ink)}
@@ -163,6 +167,7 @@ if(isset($_GET['google'])){
     </style>
 </head>
 <body>
+    <a href="<?php echo lang_switch_url($lang === 'am' ? 'en' : 'am'); ?>" class="lang-toggle" title="Switch language"><i class="fas fa-globe"></i> <?php echo $lang === 'am' ? 'English' : 'አማርኛ'; ?></a>
     <div class="auth-left">
     <div class="auth-left-bg"></div>
     <div class="auth-left-overlay"></div>
@@ -171,19 +176,19 @@ if(isset($_GET['google'])){
         <div class="brand-name">Adama<span>Rent</span></div>
     </div>
     <div class="auth-left-content">
-        <div class="eyebrow">Adama City's Rental Marketplace</div>
-        <h2>Welcome back, <span>your listings</span> are waiting</h2>
-        <p>Sign in to manage your properties, respond to tenant requests, and keep your rentals in front of the right people.</p>
+        <div class="eyebrow"><?php echo t('eyebrow'); ?></div>
+        <h2><?php echo t('login_left_title1'); ?><span><?php echo t('login_left_title2'); ?></span><?php echo t('login_left_title3'); ?></h2>
+        <p><?php echo t('login_left_desc'); ?></p>
         <ul class="features">
-            <li><i class="fa-solid fa-house"></i><span><strong>Manage your properties</strong><small>Post, edit, and track listings in one place.</small></span></li>
-            <li><i class="fa-solid fa-chart-line"></i><span><strong>Reach local tenants</strong><small>Connect with people actively searching right now.</small></span></li>
-            <li><i class="fa-solid fa-user-shield"></i><span><strong>Secure and private</strong><small>Your account data is always protected.</small></span></li>
+            <li><i class="fa-solid fa-house"></i><span><strong><?php echo t('feat_mng'); ?></strong><small><?php echo t('feat_mng_s'); ?></small></span></li>
+            <li><i class="fa-solid fa-chart-line"></i><span><strong><?php echo t('feat_reach'); ?></strong><small><?php echo t('feat_reach_s'); ?></small></span></li>
+            <li><i class="fa-solid fa-user-shield"></i><span><strong><?php echo t('feat_secure'); ?></strong><small><?php echo t('feat_secure_s'); ?></small></span></li>
         </ul>
     </div>
     <div class="auth-quote">
         <div class="quote-stars">★★★★★</div>
-        <p>"Found a reliable tenant within a week of posting. AdamaRent made everything simple."</p>
-        <div class="quote-author">— Verified landlord, Adama</div>
+        <p><?php echo t('quote_text'); ?></p>
+        <div class="quote-author"><?php echo t('quote_author'); ?></div>
     </div>
 </div>
     <div class="auth-right">
@@ -192,58 +197,58 @@ if(isset($_GET['google'])){
                 <div class="logo">AR</div>
                 <h3>AdamaRent</h3>
             </div>
-            <a href="Home.php" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
-            <h1>Welcome Back</h1>
-            <p class="subtitle">Sign in to access your landlord dashboard.</p>
+            <a href="Home.php" class="back-link"><i class="fas fa-arrow-left"></i> <?php echo t('back_home'); ?></a>
+            <h1><?php echo t('login_title'); ?></h1>
+            <p class="subtitle"><?php echo t('login_subtitle'); ?></p>
 
             <?php if(isset($error)): ?>
-                <div class="error-msg"><i class="fas fa-circle-exclamation"></i> <?php echo $error; ?></div>
+                <div class="error-msg"><i class="fas fa-circle-exclamation"></i> <?php echo tout($error); ?></div>
             <?php endif; ?>
 
             <?php if(isset($_GET['resend']) && $_GET['resend'] === 'already'): ?>
-                <div class="info-msg"><i class="fas fa-check-circle"></i> This email is already verified — sign in below.</div>
+                <div class="info-msg"><i class="fas fa-check-circle"></i> <?php echo tout('This email is already verified — sign in below.'); ?></div>
             <?php endif; ?>
 
             <form method="POST">
                 <?php echo csrf_field(); ?>
                 <div class="form-group">
-                    <label>Email Address</label>
+                    <label><?php echo t('email_address'); ?></label>
                     <div class="input-wrapper">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" name="email" placeholder="you@example.com" required>
+                        <input type="email" name="email" placeholder="<?php echo t('email_ph'); ?>" required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
+                    <label><?php echo t('password'); ?></label>
                     <div class="input-wrapper">
                         <i class="fas fa-lock"></i>
-                        <input type="password" name="password" id="password" placeholder="Enter your password" required>
+                        <input type="password" name="password" id="password" placeholder="<?php echo t('pw_placeholder'); ?>" required>
                         <button type="button" class="pw-toggle" onclick="togglePassword()" aria-label="Show password"><i class="fas fa-eye" id="pwIcon"></i></button>
                     </div>
                 </div>
                 <div class="form-row">
-                    <label class="check"><input type="checkbox" name="remember"> Remember me</label>
-                    <a href="resend_verification.php">Forgot password?</a>
+                    <label class="check"><input type="checkbox" name="remember"> <?php echo t('remember_me'); ?></label>
+                    <a href="resend_verification.php"><?php echo t('forgot_password'); ?></a>
                 </div>
-                <button type="submit" name="login" class="btn-submit"><i class="fas fa-right-to-bracket"></i> Sign In</button>
+                <button type="submit" name="login" class="btn-submit"><i class="fas fa-right-to-bracket"></i> <?php echo t('sign_in'); ?></button>
             </form>
 
             <?php if($google_enabled): ?>
-                <div class="divider">or continue with</div>
+                <div class="divider"><?php echo t('or_continue'); ?></div>
                 <a href="google_login.php" class="btn-google">
                     <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.2 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.2 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.2-5.6l-6.6-5.6C29.5 34.4 26.9 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1c.3 1.2.4 2.5.4 3.9s-.2 2.7-.4 3.9c-1.3 5.6-5.4 10.5-11 12.7l6.6 5.6C43.2 42.2 48 36 48 24c0-1.3-.1-2.7-.4-3.9L43.6 20.1z"/></svg>
-                    Continue with Google
+                    <?php echo t('continue_google'); ?>
                 </a>
             <?php endif; ?>
 
             <?php if($google_err !== ''): ?>
-                <div class="error-msg" style="margin-top:14px"><i class="fas fa-circle-exclamation"></i> <?php echo $google_err; ?></div>
+                <div class="error-msg" style="margin-top:14px"><i class="fas fa-circle-exclamation"></i> <?php echo tout($google_err); ?></div>
             <?php endif; ?>
 
             <div class="auth-footer">
-                Don't have an account? <a href="register.php">Create one</a>
+                <?php echo t('no_account'); ?> <a href="register.php"><?php echo t('create_one'); ?></a>
             </div>
-            <div class="secure-note"><i class="fas fa-lock"></i> Your information is encrypted and never shared.</div>
+            <div class="secure-note"><i class="fas fa-lock"></i> <?php echo t('secure_note'); ?></div>
         </div>
     </div>
     <script>

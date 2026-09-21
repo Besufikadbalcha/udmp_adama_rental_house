@@ -4,6 +4,7 @@ session_start();
 include('includes/db.php');
 include('includes/mail_helper.php');
 include('includes/security.php');
+include('includes/lang.php');
 
 function has_admin(): bool {
     global $conn;
@@ -180,6 +181,9 @@ if(isset($_POST['register'])){
         .auth-footer a:hover{text-decoration:underline}
         .auth-card .secure-note{margin-top:22px;padding:12px 14px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;color:#0f766e;font-size:12px;display:flex;align-items:center;gap:8px}
         .auth-card .secure-note i{font-size:15px}
+        .lang-toggle{position:fixed;top:20px;right:24px;z-index:1000;display:inline-flex;align-items:center;gap:8px;padding:9px 16px;border-radius:50px;font-size:13px;font-weight:700;text-decoration:none;transition:all .25s;font-family:'Inter',sans-serif;background:#0f172a;color:#fff;border:1px solid rgba(255,255,255,.14);box-shadow:0 6px 20px rgba(0,0,0,.2)}
+        .lang-toggle:hover{background:#1e293b;transform:translateY(-1px)}
+        .lang-toggle i{color:#2dd4bf}
         .mobile-brand{display:none;text-align:center;margin-bottom:30px}
         .mobile-brand .logo{width:54px;height:54px;background:linear-gradient(135deg,#0d9488,#14b8a6);border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:22px;color:#fff;margin:0 auto 14px;box-shadow:0 6px 18px rgba(13,148,136,.35)}
         .mobile-brand h3{font-size:20px;font-weight:800;color:var(--ink)}
@@ -194,6 +198,7 @@ if(isset($_POST['register'])){
     </style>
 </head>
 <body>
+    <a href="<?php echo lang_switch_url($lang === 'am' ? 'en' : 'am'); ?>" class="lang-toggle" title="Switch language"><i class="fas fa-globe"></i> <?php echo $lang === 'am' ? 'English' : 'አማርኛ'; ?></a>
     <div class="auth-left">
     <div class="auth-left-bg"></div>
     <div class="auth-left-overlay"></div>
@@ -202,19 +207,19 @@ if(isset($_POST['register'])){
         <div class="brand-name">Adama<span>Rent</span></div>
     </div>
     <div class="auth-left-content">
-        <div class="eyebrow">Adama City's Rental Marketplace</div>
-        <h2>Your property, <span>seen by thousands</span> of tenants</h2>
-        <p>Create your free landlord account and start listing your properties to potential tenants across Adama City.</p>
+        <div class="eyebrow"><?php echo t('eyebrow'); ?></div>
+        <h2><?php echo t('register_left_title1'); ?><span><?php echo t('register_left_title2'); ?></span><?php echo t('register_left_title3'); ?></h2>
+        <p><?php echo t('register_left_desc'); ?></p>
         <ul class="features">
-            <li><i class="fa-solid fa-house"></i><span><strong>List unlimited properties</strong><small>Showcase every home or space you manage.</small></span></li>
-            <li><i class="fa-solid fa-chart-line"></i><span><strong>Reach local tenants</strong><small>Connect with people actively searching right now.</small></span></li>
-            <li><i class="fa-solid fa-user-shield"></i><span><strong>Free to get started</strong><small>No upfront listing fees, ever.</small></span></li>
+            <li><i class="fa-solid fa-house"></i><span><strong><?php echo t('feat_unlimited'); ?></strong><small><?php echo t('feat_unlimited_s'); ?></small></span></li>
+            <li><i class="fa-solid fa-chart-line"></i><span><strong><?php echo t('feat_reach'); ?></strong><small><?php echo t('feat_reach_s'); ?></small></span></li>
+            <li><i class="fa-solid fa-user-shield"></i><span><strong><?php echo t('feat_free'); ?></strong><small><?php echo t('feat_free_s'); ?></small></span></li>
         </ul>
     </div>
     <div class="auth-quote">
         <div class="quote-stars">★★★★★</div>
-        <p>"Found a reliable tenant within a week of posting. AdamaRent made everything simple."</p>
-        <div class="quote-author">— Verified landlord, Adama</div>
+        <p><?php echo t('quote_text'); ?></p>
+        <div class="quote-author"><?php echo t('quote_author'); ?></div>
     </div>
 </div>
     <div class="auth-right">
