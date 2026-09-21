@@ -3,6 +3,7 @@ include('includes/session_config.php');
 session_start();
 include('includes/db.php');
 include('includes/security.php');
+include('includes/lang.php');
 
 if(!isset($_SESSION['user_id'])){
     header("Location: login.php");
