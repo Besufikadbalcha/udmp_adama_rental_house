@@ -1,6 +1,14 @@
 <?php
 error_reporting(E_ALL & ~E_NOTICE & ~E_WARNING);
 ini_set('display_errors', 0);
+
+// ── Guard: block re-runs after initial setup ──────────────────────────
+$lock_file = __DIR__ . '/installed.lock';
+if (file_exists($lock_file)) {
+    http_response_code(403);
+    die('<!DOCTYPE html><html><head><title>Setup Locked</title></head><body style="font-family:sans-serif;text-align:center;padding:80px"><h1>⛔ Setup Locked</h1><p>Setup has already been completed. Delete <code>installed.lock</code> to re-run.</p></body></html>');
+}
+
 // Old mysqli behaviour: return false on error instead of throwing exceptions
 // (shared hosts like InfinityFree deny CREATE DATABASE, which would otherwise abort setup).
 mysqli_report(MYSQLI_REPORT_OFF);
@@ -174,20 +182,23 @@ if (!$conn) {
     if ($total_users > 0) {
         // App is already in use — NEVER regenerate or display the admin setup key.
         mysqli_query($conn, "DELETE FROM app_config WHERE config_key='admin_setup_key'");
+        // Create lock file so setup.php is blocked on future visits
+        @file_put_contents($lock_file, 'Setup completed on ' . date('Y-m-d H:i:s') . PHP_EOL);
         $fatal = "Setup has already been completed (this database is in use). "
                . "Delete <b>setup.php</b> from the server. "
                . "If you need another admin, sign in and use the admin invite flow.";
     } else {
         $key = bin2hex(random_bytes(16));
         $safe = mysqli_real_escape_string($conn, $key);
-        mysqli_query($conn, "INSERT INTO app_config (config_key, config_value) VALUES ('admin_setup_key', '$safe')");
+        // Use REPLACE INTO to handle duplicate key on page refresh
+        mysqli_query($conn, "REPLACE INTO app_config (config_key, config_value) VALUES ('admin_setup_key', '$safe')");
         $msg = "Database installed successfully. No admin exists yet.";
         $msg .= "<br>Register an account at <b>register.php</b> with the admin setup key";
         $msg .= " (below) and that account becomes the admin.";
         $stage = "setup-key";
     }
 
-    @mkdir(__DIR__ . '/uploads', 0777, true);
+    @mkdir(__DIR__ . '/uploads', 0755, true);
 }
 ?>
 <!DOCTYPE html>

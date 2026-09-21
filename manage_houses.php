@@ -11,23 +11,29 @@ if(!isset($_SESSION['user_id'])){
 
 $current_user = $_SESSION['user_id'];
 
-$stats = mysqli_fetch_assoc(mysqli_query($conn, "SELECT 
+$stmt = mysqli_prepare($conn, "SELECT 
     COUNT(*) as total,
     SUM(CASE WHEN status='Available' THEN 1 ELSE 0 END) as available,
     SUM(CASE WHEN status='Rented' THEN 1 ELSE 0 END) as rented,
     SUM(CASE WHEN status='Pending' THEN 1 ELSE 0 END) as pending
-    FROM houses WHERE user_id = $current_user"));
+    FROM houses WHERE user_id = ?");
+mysqli_stmt_bind_param($stmt, "i", $current_user);
+mysqli_stmt_execute($stmt);
+$stats = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 $rental_reqs = [];
-$rq = mysqli_query($conn, "
+$rq_stmt = mysqli_prepare($conn, "
     SELECT rr.id, rr.status AS req_status, rr.created_at, rr.message,
            h.kebele, h.street, h.amount, h.category, u.full_name, u.email
     FROM rental_requests rr
     JOIN houses h ON rr.house_id = h.id
     LEFT JOIN users u ON rr.user_id = u.id
-    WHERE h.user_id = $current_user
+    WHERE h.user_id = ?
     ORDER BY CASE rr.status WHEN 'pending' THEN 0 ELSE 1 END, rr.created_at DESC
     LIMIT 50");
+mysqli_stmt_bind_param($rq_stmt, "i", $current_user);
+mysqli_stmt_execute($rq_stmt);
+$rq = mysqli_stmt_get_result($rq_stmt);
 if($rq) $rental_reqs = mysqli_fetch_all($rq, MYSQLI_ASSOC);
 $pending_req_count = 0;
 foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_count++; }
@@ -282,8 +288,10 @@ foreach($rental_reqs as $r){ if($r['req_status'] === 'pending') $pending_req_cou
 
         <div class="card-grid">
             <?php
-            $query = "SELECT * FROM houses WHERE user_id = $current_user ORDER BY id DESC";
-            $result = mysqli_query($conn, $query);
+            $qstmt = mysqli_prepare($conn, "SELECT * FROM houses WHERE user_id = ? ORDER BY id DESC");
+            mysqli_stmt_bind_param($qstmt, "i", $current_user);
+            mysqli_stmt_execute($qstmt);
+            $result = mysqli_stmt_get_result($qstmt);
 
             if($result && mysqli_num_rows($result) > 0) {
                 while($row = mysqli_fetch_assoc($result)) {

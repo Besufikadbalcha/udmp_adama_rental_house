@@ -24,43 +24,86 @@ $google_enabled = defined('GOOGLE_CLIENT_ID') && GOOGLE_CLIENT_ID !== '';
 
 if(isset($_POST['register'])){
     csrf_validate();
-    $name = mysqli_real_escape_string($conn, $_POST['full_name']);
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
-    $pass = password_hash($_POST['password'], PASSWORD_DEFAULT);
+    $name  = trim($_POST['full_name']);
+    $email_raw = trim($_POST['email']);
+    $password_raw = $_POST['password'];
     $setup_key = trim($_POST['setup_key'] ?? '');
 
-    $check_email = mysqli_query($conn, "SELECT id FROM users WHERE email='$email'");
-    if (!validate_email_before_send($_POST['email'])['ok']) {
+    // Server-side password validation
+    if (strlen($password_raw) < 6) {
+        $error = "Password must be at least 6 characters.";
+    } elseif (!validate_email_before_send($email_raw)['ok']) {
         $error = "That email address is not valid or its domain can't receive mail. Please double-check it and try again.";
-    } elseif($check_email && mysqli_num_rows($check_email) > 0){
-        $error = "An account with this email already exists.";
-    } elseif ($setup_key !== '' && !has_admin() && setup_key_valid($setup_key)) {
-        $sql = "INSERT INTO users (full_name, email, password, is_admin, status, email_verified) VALUES ('$name', '$email', '$pass', 2, 1, 1)";
-        if(mysqli_query($conn, $sql)){
-            mysqli_query($conn, "DELETE FROM app_config WHERE config_key='admin_setup_key'");
-            header("Location: login.php?setup=admin");
-            exit();
-        } else {
-            $error = "Registration failed. Please try again.";
-        }
     } else {
-        $token = bin2hex(random_bytes(32));
-        $expires = date('Y-m-d H:i:s', time() + 86400); // 24h
-        $sql = "INSERT INTO users (full_name, email, password, email_verified, verify_token, verify_expires) VALUES ('$name', '$email', '$pass', 0, '$token', '$expires')";
-        if(mysqli_query($conn, $sql)){
-            $_SESSION['verify_pending_email'] = $email;
-            $mailResult = send_verification_email($email, $name, $token);
-            $loc = 'verify_pending.php?email=' . urlencode($email);
-            if ($mailResult['ok'] === false && $mailResult['info'] !== 'dev') {
-                $loc .= '&resend=failed';
-                if ($mailResult['info'] === 'brevo ip not authorized') {
-                    $loc .= '&why=ip_auth';
+        // Check duplicate email using prepared statement
+        $stmt = mysqli_prepare($conn, "SELECT id FROM users WHERE email=?");
+        mysqli_stmt_bind_param($stmt, "s", $email_raw);
+        mysqli_stmt_execute($stmt);
+        $check_email = mysqli_stmt_get_result($stmt);
+
+        if ($check_email && mysqli_num_rows($check_email) > 0) {
+            $error = "An account with this email already exists.";
+        } elseif ($setup_key !== '') {
+            // Admin bootstrap — use a transaction to prevent TOCTOU race condition
+            mysqli_begin_transaction($conn);
+            try {
+                // Lock the users table to prevent concurrent admin creation
+                mysqli_query($conn, "LOCK TABLES users WRITE, app_config WRITE");
+
+                if (has_admin()) {
+                    mysqli_query($conn, "UNLOCK TABLES");
+                    mysqli_rollback($conn);
+                    $error = "An admin account already exists. The setup key is no longer valid.";
+                } elseif (!setup_key_valid($setup_key)) {
+                    mysqli_query($conn, "UNLOCK TABLES");
+                    mysqli_rollback($conn);
+                    $error = "Invalid admin setup key. Please check and try again.";
+                } else {
+                    $pass = password_hash($password_raw, PASSWORD_DEFAULT);
+                    $stmt2 = mysqli_prepare($conn, "INSERT INTO users (full_name, email, password, is_admin, status, email_verified) VALUES (?, ?, ?, 2, 1, 1)");
+                    mysqli_stmt_bind_param($stmt2, "sss", $name, $email_raw, $pass);
+
+                    if (mysqli_stmt_execute($stmt2)) {
+                        mysqli_query($conn, "DELETE FROM app_config WHERE config_key='admin_setup_key'");
+                        mysqli_query($conn, "UNLOCK TABLES");
+                        mysqli_commit($conn);
+                        header("Location: login.php?setup=admin");
+                        exit();
+                    } else {
+                        mysqli_query($conn, "UNLOCK TABLES");
+                        mysqli_rollback($conn);
+                        $error = "Registration failed. Please try again.";
+                    }
                 }
+            } catch (Exception $e) {
+                mysqli_query($conn, "UNLOCK TABLES");
+                mysqli_rollback($conn);
+                $error = "Registration failed. Please try again.";
             }
-            header("Location: $loc");
-            exit();
         } else {
-            $error = "Registration failed. Please try again.";
+            // Regular landlord registration
+            $pass = password_hash($password_raw, PASSWORD_DEFAULT);
+            $token = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', time() + 86400); // 24h
+
+            $stmt3 = mysqli_prepare($conn, "INSERT INTO users (full_name, email, password, email_verified, verify_token, verify_expires) VALUES (?, ?, ?, 0, ?, ?)");
+            mysqli_stmt_bind_param($stmt3, "sssss", $name, $email_raw, $pass, $token, $expires);
+
+            if (mysqli_stmt_execute($stmt3)) {
+                $_SESSION['verify_pending_email'] = $email_raw;
+                $mailResult = send_verification_email($email_raw, $name, $token);
+                $loc = 'verify_pending.php?email=' . urlencode($email_raw);
+                if ($mailResult['ok'] === false && $mailResult['info'] !== 'dev') {
+                    $loc .= '&resend=failed';
+                    if ($mailResult['info'] === 'brevo ip not authorized') {
+                        $loc .= '&why=ip_auth';
+                    }
+                }
+                header("Location: $loc");
+                exit();
+            } else {
+                $error = "Registration failed. Please try again.";
+            }
         }
     }
 }

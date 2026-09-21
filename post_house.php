@@ -333,14 +333,14 @@ if(!isset($_SESSION['user_id'])){
             mkdir($upload_dir, 0777, true);
         }
 
-        $kebele   = mysqli_real_escape_string($conn, $_POST['kebele']);
-        $street   = mysqli_real_escape_string($conn, $_POST['street']);
-        $h_num    = mysqli_real_escape_string($conn, $_POST['house_num']);
-        $category = mysqli_real_escape_string($conn, $_POST['category']);
+        $kebele   = $_POST['kebele'];
+        $street   = $_POST['street'];
+        $h_num    = $_POST['house_num'];
+        $category = $_POST['category'];
         $amount   = (int)$_POST['amount'];
-        $phone    = mysqli_real_escape_string($conn, $_POST['phone']);
-        $map      = mysqli_real_escape_string($conn, $_POST['map_link']);
-        $desc     = mysqli_real_escape_string($conn, $_POST['desc']);
+        $phone    = $_POST['phone'];
+        $map      = $_POST['map_link'];
+        $desc     = $_POST['desc'];
         $user_id  = $_SESSION['user_id'];
 
         if(empty($_FILES['house_photos']['name'][0])){
@@ -409,26 +409,30 @@ if(!isset($_SESSION['user_id'])){
                 $toast_error = 'Upload failed: No valid photos were processed.';
             } else {
                 $featured = array_shift($names);
-                $featured_safe = mysqli_real_escape_string($conn, $featured);
-                $sql = "INSERT INTO houses (kebele, street, house_number, category, amount, phone, map_link, image, description, user_id, status, is_approved, created_at) 
-                        VALUES ('$kebele', '$street', '$h_num', '$category', '$amount', '$phone', '$map', '$featured_safe', '$desc', $user_id, 'Pending', 0, NOW())";
+                $stmt = mysqli_prepare($conn, "INSERT INTO houses (kebele, street, house_number, category, amount, phone, map_link, image, description, user_id, status, is_approved, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Pending', 0, NOW())");
+                mysqli_stmt_bind_param($stmt, "ssssissssi", $kebele, $street, $h_num, $category, $amount, $phone, $map, $featured, $desc, $user_id);
 
-                if(mysqli_query($conn, $sql)){
+                if(mysqli_stmt_execute($stmt)){
                     $house_id = mysqli_insert_id($conn);
                     if(isset($_POST['amenities']) && is_array($_POST['amenities'])){
+                        $am_stmt = mysqli_prepare($conn, "INSERT IGNORE INTO house_amenities (house_id, amenity_id) VALUES (?, ?)");
                         foreach($_POST['amenities'] as $amenity_id){
                             $amenity_id = (int)$amenity_id;
                             if($amenity_id > 0){
-                                mysqli_query($conn, "INSERT IGNORE INTO house_amenities (house_id, amenity_id) VALUES ($house_id, $amenity_id)");
+                                mysqli_stmt_bind_param($am_stmt, "ii", $house_id, $amenity_id);
+                                mysqli_stmt_execute($am_stmt);
                             }
                         }
                     }
-                    $req_sql = "INSERT INTO requests (user_id, house_id, status, type, created_at) VALUES ($user_id, $house_id, 0, 'new', NOW())";
-                    mysqli_query($conn, $req_sql);
+                    $req_stmt = mysqli_prepare($conn, "INSERT INTO requests (user_id, house_id, status, type, created_at) VALUES (?, ?, 0, 'new', NOW())");
+                    mysqli_stmt_bind_param($req_stmt, "ii", $user_id, $house_id);
+                    mysqli_stmt_execute($req_stmt);
+                    
                     $order = 1;
+                    $img_stmt = mysqli_prepare($conn, "INSERT INTO house_images (house_id, filename, sort_order) VALUES (?, ?, ?)");
                     foreach($names as $fn){
-                        $fn_safe = mysqli_real_escape_string($conn, $fn);
-                        mysqli_query($conn, "INSERT INTO house_images (house_id, filename, sort_order) VALUES ($house_id, '$fn_safe', $order)");
+                        mysqli_stmt_bind_param($img_stmt, "isi", $house_id, $fn, $order);
+                        mysqli_stmt_execute($img_stmt);
                         $order++;
                     }
                     $submitted = true;

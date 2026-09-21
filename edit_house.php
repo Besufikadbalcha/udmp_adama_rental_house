@@ -13,8 +13,10 @@ if(!isset($_SESSION['user_id'])){
 $user_id = $_SESSION['user_id'];
 $house_id = (int)($_GET['id'] ?? 0);
 
-$query = mysqli_query($conn, "SELECT * FROM houses WHERE id = $house_id AND user_id = $user_id");
-$data = mysqli_fetch_assoc($query);
+$stmt = mysqli_prepare($conn, "SELECT * FROM houses WHERE id = ? AND user_id = ?");
+mysqli_stmt_bind_param($stmt, "ii", $house_id, $user_id);
+mysqli_stmt_execute($stmt);
+$data = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
 
 if(!$data){
     header("Location: manage_houses.php");
@@ -22,11 +24,17 @@ if(!$data){
 }
 
 $gallery = [];
-$gq = mysqli_query($conn, "SELECT * FROM house_images WHERE house_id=$house_id ORDER BY sort_order ASC, id ASC");
+$gstmt = mysqli_prepare($conn, "SELECT * FROM house_images WHERE house_id=? ORDER BY sort_order ASC, id ASC");
+mysqli_stmt_bind_param($gstmt, "i", $house_id);
+mysqli_stmt_execute($gstmt);
+$gq = mysqli_stmt_get_result($gstmt);
 if($gq){ while($g = mysqli_fetch_assoc($gq)) $gallery[] = $g; }
 
 $current_amenities = [];
-$aq = mysqli_query($conn, "SELECT amenity_id FROM house_amenities WHERE house_id=$house_id");
+$astmt = mysqli_prepare($conn, "SELECT amenity_id FROM house_amenities WHERE house_id=?");
+mysqli_stmt_bind_param($astmt, "i", $house_id);
+mysqli_stmt_execute($astmt);
+$aq = mysqli_stmt_get_result($astmt);
 if($aq){ while($a = mysqli_fetch_assoc($aq)) $current_amenities[$a['amenity_id']] = $a['amenity_id']; }
 
 $form = $data;
@@ -75,14 +83,14 @@ if(isset($_POST['update'])){
     $upload_dir = __DIR__ . '/uploads';
     if(!is_dir($upload_dir)) mkdir($upload_dir, 0777, true);
 
-    $kebele   = isset($_POST['kebele'])   ? mysqli_real_escape_string($conn, trim($_POST['kebele']))   : '';
-    $street   = isset($_POST['street'])   ? mysqli_real_escape_string($conn, trim($_POST['street']))   : '';
-    $h_num    = isset($_POST['house_num']) ? mysqli_real_escape_string($conn, trim($_POST['house_num'])) : '';
-    $category = isset($_POST['category']) ? mysqli_real_escape_string($conn, $_POST['category'])         : '';
+    $kebele   = isset($_POST['kebele'])   ? trim($_POST['kebele'])   : '';
+    $street   = isset($_POST['street'])   ? trim($_POST['street'])   : '';
+    $h_num    = isset($_POST['house_num']) ? trim($_POST['house_num']) : '';
+    $category = isset($_POST['category']) ? $_POST['category']         : '';
     $amount   = isset($_POST['amount'])   ? (int)$_POST['amount']                                      : 0;
-    $phone    = isset($_POST['phone'])    ? mysqli_real_escape_string($conn, trim($_POST['phone']))    : '';
-    $map      = isset($_POST['map_link']) ? mysqli_real_escape_string($conn, trim($_POST['map_link'])) : '';
-    $desc     = isset($_POST['desc'])     ? mysqli_real_escape_string($conn, $_POST['desc'])           : '';
+    $phone    = isset($_POST['phone'])    ? trim($_POST['phone'])    : '';
+    $map      = isset($_POST['map_link']) ? trim($_POST['map_link']) : '';
+    $desc     = isset($_POST['desc'])     ? $_POST['desc']           : '';
 
     $form['kebele'] = $kebele;
     $form['street'] = $street;
@@ -132,12 +140,13 @@ if(isset($_POST['update'])){
         }
 
         if(!$error){
-            $img_safe = mysqli_real_escape_string($conn, $imgName);
-
             $was_approved = isset($data['is_approved']) && (int)$data['is_approved'] === 1;
             if(!$was_approved){
-                $prev_q = mysqli_query($conn, "SELECT COUNT(*) FROM requests WHERE house_id=$house_id AND status=1");
-                if($prev_q && ($c = mysqli_fetch_row($prev_q)) && (int)$c[0] > 0) $was_approved = true;
+                $prev_stmt = mysqli_prepare($conn, "SELECT COUNT(*) FROM requests WHERE house_id=? AND status=1");
+                mysqli_stmt_bind_param($prev_stmt, "i", $house_id);
+                mysqli_stmt_execute($prev_stmt);
+                $prev_res = mysqli_stmt_get_result($prev_stmt);
+                if($prev_res && ($c = mysqli_fetch_row($prev_res)) && (int)$c[0] > 0) $was_approved = true;
             }
             $changes_json = '';
             if($was_approved){
@@ -201,41 +210,57 @@ if(isset($_POST['update'])){
                 $changes_json = json_encode($changes, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
             }
 
-            $update_sql = "UPDATE houses SET kebele='$kebele', street='$street', house_number='$h_num', category='$category',
-                           amount=$amount, phone='$phone', map_link='$map', description='$desc', image='$img_safe',
-                           status='Pending', is_approved=0
-                           WHERE id=$house_id AND user_id=$user_id";
+            $update_stmt = mysqli_prepare($conn, "UPDATE houses SET kebele=?, street=?, house_number=?, category=?, amount=?, phone=?, map_link=?, description=?, image=?, status='Pending', is_approved=0 WHERE id=? AND user_id=?");
+            mysqli_stmt_bind_param($update_stmt, "ssssissssii", $kebele, $street, $h_num, $category, $amount, $phone, $map, $desc, $imgName, $house_id, $user_id);
 
-            if(mysqli_query($conn, $update_sql)){
+            if(mysqli_stmt_execute($update_stmt)){
                 $req_type = $was_approved ? 'edit' : 'new';
-                $changes_col = ($changes_json === '' || $changes_json === '[]') ? 'NULL' : "'" . mysqli_real_escape_string($conn, $changes_json) . "'";
-                mysqli_query($conn, "INSERT INTO requests (user_id, house_id, status, type, changes, created_at) VALUES ($user_id, $house_id, 0, '$req_type', $changes_col, NOW())");
+                $changes_val = ($changes_json === '' || $changes_json === '[]') ? null : $changes_json;
+                $req_stmt = mysqli_prepare($conn, "INSERT INTO requests (user_id, house_id, status, type, changes, created_at) VALUES (?, ?, 0, ?, ?, NOW())");
+                mysqli_stmt_bind_param($req_stmt, "iiss", $user_id, $house_id, $req_type, $changes_val);
+                mysqli_stmt_execute($req_stmt);
+
                 if($imgName !== $data['image'] && !empty($data['image'])){
                     @unlink($upload_dir . '/' . basename($data['image']));
                 }
 
                 if(isset($_POST['remove_img']) && is_array($_POST['remove_img'])){
+                    $del_img_stmt = mysqli_prepare($conn, "DELETE FROM house_images WHERE house_id=? AND filename=?");
                     foreach($_POST['remove_img'] as $rf){
                         $rf = basename($rf);
                         if(!$rf || $rf === $imgName) continue;
                         @unlink($upload_dir . '/' . $rf);
-                        mysqli_query($conn, "DELETE FROM house_images WHERE house_id=$house_id AND filename='" . mysqli_real_escape_string($conn, $rf) . "'");
+                        mysqli_stmt_bind_param($del_img_stmt, "is", $house_id, $rf);
+                        mysqli_stmt_execute($del_img_stmt);
                     }
                 }
 
                 $next_order = 0;
-                $gq2 = mysqli_query($conn, "SELECT MAX(sort_order) m FROM house_images WHERE house_id=$house_id");
-                if($gq2 && $row2 = mysqli_fetch_assoc($gq2)) $next_order = (int)$row2['m'] + 1;
+                $gq2 = mysqli_prepare($conn, "SELECT MAX(sort_order) m FROM house_images WHERE house_id=?");
+                mysqli_stmt_bind_param($gq2, "i", $house_id);
+                mysqli_stmt_execute($gq2);
+                $gq2_res = mysqli_stmt_get_result($gq2);
+                if($gq2_res && $row2 = mysqli_fetch_assoc($gq2_res)) $next_order = (int)$row2['m'] + 1;
+                
+                $ins_img_stmt = mysqli_prepare($conn, "INSERT INTO house_images (house_id, filename, sort_order) VALUES (?, ?, ?)");
                 foreach($newGallery as $fn){
-                    mysqli_query($conn, "INSERT INTO house_images (house_id, filename, sort_order) VALUES ($house_id, '" . mysqli_real_escape_string($conn, $fn) . "', $next_order)");
+                    mysqli_stmt_bind_param($ins_img_stmt, "isi", $house_id, $fn, $next_order);
+                    mysqli_stmt_execute($ins_img_stmt);
                     $next_order++;
                 }
 
-                mysqli_query($conn, "DELETE FROM house_amenities WHERE house_id=$house_id");
+                $del_am_stmt = mysqli_prepare($conn, "DELETE FROM house_amenities WHERE house_id=?");
+                mysqli_stmt_bind_param($del_am_stmt, "i", $house_id);
+                mysqli_stmt_execute($del_am_stmt);
+                
                 if(isset($_POST['amenities']) && is_array($_POST['amenities'])){
+                    $ins_am_stmt = mysqli_prepare($conn, "INSERT IGNORE INTO house_amenities (house_id, amenity_id) VALUES (?, ?)");
                     foreach($_POST['amenities'] as $aid){
                         $aid = (int)$aid;
-                        if($aid > 0) mysqli_query($conn, "INSERT IGNORE INTO house_amenities (house_id, amenity_id) VALUES ($house_id, $aid)");
+                        if($aid > 0) {
+                            mysqli_stmt_bind_param($ins_am_stmt, "ii", $house_id, $aid);
+                            mysqli_stmt_execute($ins_am_stmt);
+                        }
                     }
                 }
 

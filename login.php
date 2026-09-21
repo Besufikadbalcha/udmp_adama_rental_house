@@ -10,10 +10,13 @@ $verification_email = '';
 
 if(isset($_POST['login'])){
     csrf_validate();
-    $email = mysqli_real_escape_string($conn, $_POST['email']);
+    $email = $_POST['email'];
     $pass = $_POST['password'];
 
-    $res = mysqli_query($conn, "SELECT * FROM users WHERE email='$email'");
+    $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email=?");
+    mysqli_stmt_bind_param($stmt, "s", $email);
+    mysqli_stmt_execute($stmt);
+    $res = mysqli_stmt_get_result($stmt);
     if($res && ($user = mysqli_fetch_assoc($res))){
         if(password_verify($pass, $user['password'])){
             session_regenerate_id(true);
@@ -28,7 +31,10 @@ if(isset($_POST['login'])){
             
             // Check for a pending admin invite for this user
             $uid = (int)$user['id'];
-            $check_invite = mysqli_query($conn, "SELECT * FROM admin_invites WHERE user_id=$uid AND status='pending' LIMIT 1");
+            $inv_stmt = mysqli_prepare($conn, "SELECT * FROM admin_invites WHERE user_id=? AND status='pending' LIMIT 1");
+            mysqli_stmt_bind_param($inv_stmt, "i", $uid);
+            mysqli_stmt_execute($inv_stmt);
+            $check_invite = mysqli_stmt_get_result($inv_stmt);
             if(mysqli_num_rows($check_invite) > 0){
                 $_SESSION['pending_admin_key'] = 1;
                 header("Location: admin_key.php");
