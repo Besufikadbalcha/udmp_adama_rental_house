@@ -11,15 +11,19 @@ $verification_email = '';
 
 if(isset($_POST['login'])){
     csrf_validate();
-    $email = $_POST['email'];
+    $email = trim($_POST['email']);
     $pass = $_POST['password'];
 
-    $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email=?");
+    if (login_locked_out($email)) {
+        $error = login_lockout_message();
+    } else {
+        $stmt = mysqli_prepare($conn, "SELECT * FROM users WHERE email=?");
     mysqli_stmt_bind_param($stmt, "s", $email);
     mysqli_stmt_execute($stmt);
     $res = mysqli_stmt_get_result($stmt);
     if($res && ($user = mysqli_fetch_assoc($res))){
         if(password_verify($pass, $user['password'])){
+            clear_login_failures($email);
             session_regenerate_id(true);
             // Email verification gate
             if((int)$user['email_verified'] === 0){
@@ -58,10 +62,13 @@ if(isset($_POST['login'])){
             exit();
             }
         } else {
+            record_login_failure($email);
             $error = "Invalid password. Please try again.";
         }
     } else {
+        record_login_failure($email);
         $error = "No account found with this email address.";
+    }
     }
 }
 
@@ -71,7 +78,9 @@ $google_err = '';
 if(isset($_GET['google'])){
     $google_err = $_GET['google'] === 'denied'
         ? 'Sign-in with Google was cancelled.'
-        : 'Google sign-in failed. Please try again, or use email &amp; password.';
+        : ($_GET['google'] === 'unverified'
+            ? 'Your Google account email is not verified. Please verify it with Google and try again.'
+            : 'Google sign-in failed. Please try again, or use email &amp; password.');
 }
 ?>
 <!DOCTYPE html>
