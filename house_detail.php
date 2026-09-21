@@ -325,7 +325,7 @@ $rentHref  = isset($_SESSION['user_id'])
                 <div class="actions">
                     <?php if($isAvail): ?>
                         <a href="<?php echo htmlspecialchars($rentHref); ?>" id="rentBtn" class="btn-action btn-rent"><i class="fas <?php echo $pendingReqId ? 'fa-xmark' : 'fa-hand-holding-heart'; ?>"></i> <?php echo $pendingReqId ? t('hd_cancel_request') : t('hd_request_rent'); ?></a>
-                        <button type="button" id="callOwnerBtn" class="btn-action btn-call"><i class="fas fa-phone"></i> <?php echo t('hd_call_owner'); ?></button>
+                        <button type="button" id="callOwnerBtn" class="btn-action btn-call" data-phone="<?php echo htmlspecialchars($house['phone'] ?? ''); ?>"><i class="fas fa-phone"></i> <?php echo t('hd_call_owner'); ?></button>
                     <?php else: ?>
                         <div class="rented-note"><i class="fas fa-lock"></i> <?php echo t('hd_rented_note'); ?></div>
                     <?php endif; ?>
@@ -493,7 +493,7 @@ $rentHref  = isset($_SESSION['user_id'])
             callOwnerBtn.addEventListener('click', function(e){
                 e.preventDefault();
                 var state = <?php echo json_encode($callState); ?>;
-                var phone = <?php echo json_encode($house['phone'] ?? ''); ?>;
+                var phone = this.getAttribute('data-phone') || <?php echo json_encode($house['phone'] ?? ''); ?>;
                 if(state === 'call'){
                     showToast(hdCalling, 'success', hdCallingOwner);
                     window.location.href = 'tel:' + phone;
