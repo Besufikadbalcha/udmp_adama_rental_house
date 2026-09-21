@@ -44,6 +44,7 @@ if($house){
 
 $status    = $house['status'] ?? '';
 $isAvail   = ($status === 'Available');
+$ownerPhone = preg_replace('/[^0-9+]/', '', $house['phone'] ?? '');
 $pendingReqId = 0;
 $callState = 'ask';
 if(isset($_SESSION['user_id']) && $id > 0){
@@ -200,6 +201,7 @@ $rentHref  = isset($_SESSION['user_id'])
         .btn-map{background:rgba(59,130,246,.1);color:#3b82f6}
         .btn-map:hover{background:#3b82f6;color:#fff}
         .rented-note{grid-column:1/-1;background:#f8faf9;border:1px dashed #e2e8f0;color:#94a3b8;border-radius:11px;padding:14px;text-align:center;font-size:13px;font-weight:600}
+        .rented-note.rented-ok{background:#f0fdfa;border:1px solid #ccfbf1;color:#0f766e}
         .btn-rent:disabled{opacity:.65;cursor:default;transform:none;box-shadow:none}
 
         /* OWNER CARD */
@@ -504,7 +506,8 @@ $rentHref  = isset($_SESSION['user_id'])
                 }
             });
         }
-    </script>
+
+        </script>
     <?php include(__DIR__ . '/includes/popup.php'); ?>
 </body>
 </html>
