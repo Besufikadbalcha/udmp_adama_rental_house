@@ -1,4 +1,4 @@
-﻿<?php include('includes/session_config.php'); session_start(); include('includes/db.php');
+﻿<?php include('includes/session_config.php'); session_start(); include('includes/db.php'); include('includes/lang.php');
 $total_houses  = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM houses"))[0];
 $total_landlords = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(*) FROM users WHERE is_admin=0"))[0];
 $total_kebeles = (int) mysqli_fetch_row(mysqli_query($conn, "SELECT COUNT(DISTINCT kebele) FROM houses"))[0];
@@ -53,6 +53,9 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 .user-dropdown a:hover{background:rgba(255,255,255,.05);color:#fff}
 .user-dropdown a.logout{color:#f87171;border-top:1px solid rgba(255,255,255,.08)}
 .user-dropdown a.logout:hover{background:rgba(248,113,113,.1);color:#fca5a5}
+.lang-pill{display:inline-flex;align-items:center;gap:7px;color:#fff;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:50px;padding:9px 16px;font-weight:600;font-size:13px;text-decoration:none;transition:all .2s}
+.lang-pill:hover{background:rgba(255,255,255,.16);border-color:rgba(45,212,191,.4)}
+.lang-pill i{color:#2dd4bf}
 
 /* HERO */
 .hero{position:relative;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#0f172a}
@@ -121,7 +124,8 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 
 @media(max-width:768px){
 .navbar{padding:12px 20px}
-.nav-links a:not(.btn-nav){display:none}
+.nav-links a:not(.btn-nav),.nav-links:not(:has(a.btn-nav)) a{display:none}
+.lang-pill{display:inline-flex !important}
 .stats-grid{grid-template-columns:repeat(2,1fr);gap:16px}
 .cat-grid{grid-template-columns:1fr}
 .steps-grid{grid-template-columns:1fr}
@@ -138,12 +142,13 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <div class="nav-brand-text">Adama<span>Rent</span></div>
     </a>
     <div class="nav-center">
-        <a href="index.php">Home</a>
-        <a href="#property-types">Property types</a>
-        <a href="#how-it-works">How it works</a>
-        <a href="#contact">Contact</a>
+        <a href="index.php"><?php echo t('nav_home'); ?></a>
+        <a href="#property-types"><?php echo t('nav_property_types'); ?></a>
+        <a href="#how-it-works"><?php echo t('nav_how_it_works'); ?></a>
+        <a href="#contact"><?php echo t('nav_contact'); ?></a>
     </div>
     <div class="nav-links">
+        <a href="<?php echo lang_switch_url($lang === 'am' ? 'en' : 'am'); ?>" class="lang-pill" title="Switch language"><i class="fas fa-globe"></i> <?php echo $lang === 'am' ? 'English' : 'አማርኛ'; ?></a>
         <?php if(isset($_SESSION['user_id'])): ?>
             <div class="user-avatar-wrap">
                 <div class="user-avatar"><?php echo htmlspecialchars(strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1))); ?></div>
@@ -154,13 +159,13 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
                         <div class="user-dropdown-role"><?php echo isset($_SESSION['is_admin']) && $_SESSION['is_admin'] >= 1 ? 'Admin' : 'Landlord'; ?></div></div>
                     </div>
                     <div class="user-dropdown-divider"></div>
-                    <a href="manage_houses.php"><i class="fas fa-th-large"></i> Dashboard</a>
-                    <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
-                    <a href="logout.php" class="logout"><i class="fas fa-right-from-bracket"></i> Sign Out</a>
+                    <a href="manage_houses.php"><i class="fas fa-th-large"></i> <?php echo t('nav_dashboard'); ?></a>
+                    <a href="profile.php"><i class="fas fa-user"></i> <?php echo t('nav_profile'); ?></a>
+                    <a href="logout.php" class="logout"><i class="fas fa-right-from-bracket"></i> <?php echo t('nav_signout'); ?></a>
                 </div>
             </div>
         <?php else: ?>
-            <a href="login.php" class="btn-nav"><i class="fas fa-right-to-bracket"></i> Login</a>
+            <a href="login.php" class="btn-nav"><i class="fas fa-right-to-bracket"></i> <?php echo t('nav_login'); ?></a>
         <?php endif; ?>
     </div>
 </nav>
@@ -171,69 +176,69 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
         <div class="hero-gradient"></div>
     </div>
     <div class="hero-content">
-        <h1>Find Your Perfect <span>Rental Home</span> in Adama</h1>
-        <p>The trusted digital marketplace connecting landlords and tenants across Adama City. Search, compare, and secure your next property.</p>
+        <h1><?php echo t('hero_title1'); ?><span><?php echo t('hero_title2'); ?></span><?php echo t('hero_title3'); ?></h1>
+        <p><?php echo t('hero_desc'); ?></p>
         <div class="hero-actions">
-            <a href="index.php" class="btn-hero btn-hero-primary"><i class="fas fa-search"></i> Get Started</a>
-            <a href="<?php echo isset($_SESSION['user_id']) ? 'post_house.php' : 'register.php'; ?>" class="btn-hero btn-hero-secondary"><i class="fas fa-plus-circle"></i> List Your Property</a>
+            <a href="index.php" class="btn-hero btn-hero-primary"><i class="fas fa-search"></i> <?php echo t('btn_get_started'); ?></a>
+            <a href="<?php echo isset($_SESSION['user_id']) ? 'post_house.php' : 'register.php'; ?>" class="btn-hero btn-hero-secondary"><i class="fas fa-plus-circle"></i> <?php echo t('btn_list_property'); ?></a>
         </div>
     </div>
 </header>
 
 <section class="stats-bar">
     <div class="stats-grid">
-        <div class="stat-item"><h3><?php echo $total_houses ?>+</h3><p>Properties Listed</p></div>
-        <div class="stat-item"><h3><?php echo $total_landlords ?>+</h3><p>Verified Landlords</p></div>
-        <div class="stat-item"><h3><?php echo $total_kebeles ?>+</h3><p>Kebeles Covered</p></div>
-        <div class="stat-item"><h3><?php echo $total_tenants ?>+</h3><p>Happy Tenants</p></div>
+        <div class="stat-item"><h3><?php echo $total_houses ?>+</h3><p><?php echo t('stat_properties'); ?></p></div>
+        <div class="stat-item"><h3><?php echo $total_landlords ?>+</h3><p><?php echo t('stat_landlords'); ?></p></div>
+        <div class="stat-item"><h3><?php echo $total_kebeles ?>+</h3><p><?php echo t('stat_kebeles'); ?></p></div>
+        <div class="stat-item"><h3><?php echo $total_tenants ?>+</h3><p><?php echo t('stat_tenants'); ?></p></div>
     </div>
 </section>
 
 <section class="categories" id="property-types">
     <div class="section-header">
-        <div class="tag">Property Types</div>
-        <h2>Browse by Category</h2>
-        <p>From cozy rooms to commercial spaces, find exactly what you need.</p>
+        <div class="tag"><?php echo t('cat_tag'); ?></div>
+        <h2><?php echo t('cat_heading'); ?></h2>
+        <p><?php echo t('cat_sub'); ?></p>
     </div>
     <div class="cat-grid">
         <a href="index.php?cat=Single+Home" class="cat-card">
             <div class="cat-icon"><i class="fas fa-house-chimney"></i></div>
-            <h3>Single Homes</h3>
-            <p>Cozy rooms and traditional houses perfect for students and working professionals.</p>
+            <h3><?php echo t('cat_single'); ?></h3>
+            <p><?php echo t('cat_single_desc'); ?></p>
         </a>
         <a href="index.php?cat=Apartment" class="cat-card">
             <div class="cat-icon"><i class="fas fa-building"></i></div>
-            <h3>Apartments & Villas</h3>
-            <p>Modern apartments and luxury villas in prime locations across Adama.</p>
+            <h3><?php echo t('cat_apt'); ?></h3>
+            <p><?php echo t('cat_apt_desc'); ?></p>
         </a>
         <a href="index.php?cat=Shop" class="cat-card">
             <div class="cat-icon"><i class="fas fa-store"></i></div>
-            <h3>Commercial Spaces</h3>
-            <p>Offices, shops, and warehouses for businesses of all sizes.</p>
+            <h3><?php echo t('cat_com'); ?></h3>
+            <p><?php echo t('cat_com_desc'); ?></p>
         </a>
     </div>
 </section>
 
 <section class="how-it-works" id="how-it-works">
     <div class="section-header">
-        <div class="tag">How It Works</div>
-        <h2>Simple as 1-2-3</h2>
+        <div class="tag"><?php echo t('hiw_tag'); ?></div>
+        <h2><?php echo t('hiw_heading'); ?></h2>
     </div>
     <div class="steps-grid">
         <div class="step">
             <div class="step-number">1</div>
-            <h3>Get Started</h3>
-            <p>Browse listings by category, location, and price range to find your ideal property.</p>
+            <h3><?php echo t('step1_t'); ?></h3>
+            <p><?php echo t('step1_d'); ?></p>
         </div>
         <div class="step">
             <div class="step-number">2</div>
-            <h3>Contact Landlord</h3>
-            <p>Get the landlord's contact details and reach out directly to schedule a visit.</p>
+            <h3><?php echo t('step2_t'); ?></h3>
+            <p><?php echo t('step2_d'); ?></p>
         </div>
         <div class="step">
             <div class="step-number">3</div>
-            <h3>Move In</h3>
-            <p>Finalize your agreement and move into your new home or business space.</p>
+            <h3><?php echo t('step3_t'); ?></h3>
+            <p><?php echo t('step3_d'); ?></p>
         </div>
     </div>
 </section>
@@ -242,7 +247,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
     <div class="footer-grid">
         <div class="footer-brand">
             <h3>Adama<span>Rent</span></h3>
-            <p>The first digital marketplace for property rentals in Adama City. Connecting landlords and tenants directly, saving you time and money.</p>
+            <p><?php echo t('footer_tagline'); ?></p>
             <div class="footer-social">
                 <a href="https://t.me/Get_dope" target="_blank" class="tg"><i class="fab fa-telegram-plane"></i></a>
                 <a href="https://facebook.com/Getdope" target="_blank" class="fb"><i class="fab fa-facebook-f"></i></a>
@@ -251,27 +256,27 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
             </div>
         </div>
         <div class="footer-col">
-            <h4>Quick Links</h4>
-            <a href="index.php">Browse Properties</a>
-            <a href="<?php echo isset($_SESSION['user_id']) ? 'post_house.php' : 'register.php'; ?>">List Your Property</a>
-            <a href="login.php">Sign In</a>
+            <h4><?php echo t('footer_quick'); ?></h4>
+            <a href="index.php"><?php echo t('footer_browse'); ?></a>
+            <a href="<?php echo isset($_SESSION['user_id']) ? 'post_house.php' : 'register.php'; ?>"><?php echo t('btn_list_property'); ?></a>
+            <a href="login.php"><?php echo t('footer_signin'); ?></a>
         </div>
         <div class="footer-col">
-            <h4>Categories</h4>
-            <a href="index.php?cat=Single+Home">Single Homes</a>
-            <a href="index.php?cat=Apartment">Apartments</a>
-            <a href="index.php?cat=Villa">Villas</a>
-            <a href="index.php?cat=Shop">Shops</a>
+            <h4><?php echo t('footer_categories'); ?></h4>
+            <a href="index.php?cat=Single+Home"><?php echo t('cat_single'); ?></a>
+            <a href="index.php?cat=Apartment"><?php echo t('footer_apartments'); ?></a>
+            <a href="index.php?cat=Villa"><?php echo t('footer_villas'); ?></a>
+            <a href="index.php?cat=Shop"><?php echo t('footer_shops'); ?></a>
         </div>
         <div class="footer-col">
-            <h4>Contact</h4>
+            <h4><?php echo t('footer_contact'); ?></h4>
             <a href="#"><i class="fas fa-location-dot"></i> Adama, Oromia, Ethiopia</a>
             <a href="tel:+251910407721"><i class="fas fa-phone"></i> +251 910 407 721</a>
             <a href="tel:+251938272728"><i class="fas fa-phone"></i> +251 938 272 728</a>
         </div>
     </div>
     <div class="footer-bottom">
-        &copy; <?php echo date("Y"); ?> AdamaRent. All rights reserved.
+        &copy; <?php echo date("Y"); ?> AdamaRent. <?php echo t('footer_rights'); ?>
     </div>
 </footer>
 

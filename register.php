@@ -228,72 +228,72 @@ if(isset($_POST['register'])){
                 <div class="logo">AR</div>
                 <h3>AdamaRent</h3>
             </div>
-            <a href="Home.php" class="back-link"><i class="fas fa-arrow-left"></i> Back to Home</a>
-            <h1>Create Account</h1>
-            <p class="subtitle">Join AdamaRent as a landlord. It takes less than a minute.</p>
+            <a href="Home.php" class="back-link"><i class="fas fa-arrow-left"></i> <?php echo t('back_home'); ?></a>
+            <h1><?php echo t('register_title'); ?></h1>
+            <p class="subtitle"><?php echo t('register_subtitle'); ?></p>
 
             <?php if(isset($error)): ?>
-                <div class="error-msg"><i class="fas fa-circle-exclamation"></i> <?php echo $error; ?></div>
+                <div class="error-msg"><i class="fas fa-circle-exclamation"></i> <?php echo tout($error); ?></div>
             <?php endif; ?>
 
             <form method="POST">
                 <?php echo csrf_field(); ?>
                 <div class="form-group">
-                    <label>Full Name</label>
+                    <label><?php echo t('full_name'); ?></label>
                     <div class="input-wrapper">
                         <i class="fas fa-user"></i>
-                        <input type="text" name="full_name" placeholder="Your full name" required>
+                        <input type="text" name="full_name" placeholder="<?php echo t('full_name_ph'); ?>" required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Email Address</label>
+                    <label><?php echo t('email_address'); ?></label>
                     <div class="input-wrapper">
                         <i class="fas fa-envelope"></i>
-                        <input type="email" name="email" placeholder="you@example.com" required>
+                        <input type="email" name="email" placeholder="<?php echo t('email_ph'); ?>" required>
                     </div>
                 </div>
                 <div class="form-group">
-                    <label>Password</label>
+                    <label><?php echo t('password'); ?></label>
                     <div class="input-wrapper">
                         <i class="fas fa-lock"></i>
-                        <input type="password" name="password" id="password" placeholder="Create a strong password" required minlength="6">
+                        <input type="password" name="password" id="password" placeholder="<?php echo t('pw_placeholder_signup'); ?>" required minlength="6">
                         <button type="button" class="pw-toggle" onclick="togglePassword()" aria-label="Show password"><i class="fas fa-eye" id="pwIcon"></i></button>
                     </div>
                 </div>
                 <div class="form-group" id="setupKeyGroup" style="display:none">
-                    <label>Admin Setup Key</label>
+                    <label><?php echo t('admin_setup_key'); ?></label>
                     <div class="input-wrapper">
                         <i class="fas fa-key"></i>
-                        <input type="text" name="setup_key" placeholder="Paste admin setup key here">
+                        <input type="text" name="setup_key" placeholder="<?php echo t('admin_key_ph'); ?>">
                     </div>
-                    <div class="setup-hint">Only needed if you want this account to become the first administrator.</div>
+                    <div class="setup-hint"><?php echo t('admin_key_hint'); ?></div>
                 </div>
                 <div class="setup-toggle-row">
                     <label class="check">
-                        <input type="checkbox" id="setupKeyToggle"> I'm the site administrator
+                        <input type="checkbox" id="setupKeyToggle"> <?php echo t('im_admin'); ?>
                     </label>
                 </div>
                 <div class="form-group">
                     <label class="check">
                         <input type="checkbox" name="agree_terms" required>
-                        I agree to the <a href="terms.php" target="_blank">Terms of Service</a> and <a href="privacy.php" target="_blank">Privacy Policy</a>
+                        <?php echo t('agree_terms'); ?><a href="terms.php" target="_blank"><?php echo t('terms_service'); ?></a><?php echo t('agree_terms2'); ?><a href="privacy.php" target="_blank"><?php echo t('privacy_policy'); ?></a><?php echo t('agree_terms_suffix'); ?>
                     </label>
                 </div>
-                <button type="submit" name="register" class="btn-submit"><i class="fas fa-user-plus"></i> Create Account</button>
+                <button type="submit" name="register" class="btn-submit"><i class="fas fa-user-plus"></i> <?php echo t('reg_btn'); ?></button>
             </form>
 
             <?php if($google_enabled): ?>
-                <div class="divider">or continue with</div>
+                <div class="divider"><?php echo t('or_continue'); ?></div>
                 <a href="google_login.php" class="btn-google">
                     <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.2 29.5 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.2 29.5 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.5 0 10.5-2.1 14.2-5.6l-6.6-5.6C29.5 34.4 26.9 36 24 36c-5.2 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20.1c.3 1.2.4 2.5.4 3.9s-.2 2.7-.4 3.9c-1.3 5.6-5.4 10.5-11 12.7l6.6 5.6C43.2 42.2 48 36 48 24c0-1.3-.1-2.7-.4-3.9L43.6 20.1z"/></svg>
-                    Continue with Google
+                    <?php echo t('continue_google'); ?>
                 </a>
             <?php endif; ?>
 
             <div class="auth-footer">
-                Already have an account? <a href="login.php">Sign in</a>
+                <?php echo t('has_account'); ?> <a href="login.php"><?php echo t('sign_in_link'); ?></a>
             </div>
-            <div class="secure-note"><i class="fas fa-lock"></i> Your information is encrypted and never shared.</div>
+            <div class="secure-note"><i class="fas fa-lock"></i> <?php echo t('secure_reg_note'); ?></div>
         </div>
     </div>
     <script>
