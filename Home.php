@@ -167,6 +167,7 @@ body{font-family:'Inter',system-ui,-apple-system,sans-serif;color:#1e293b;overfl
 
 <header class="hero">
     <div class="hero-bg">
+        <img src="images/IMG_7182.jpeg" alt="">
         <div class="hero-gradient"></div>
     </div>
     <div class="hero-content">
